@@ -2,7 +2,9 @@
 ### Autonomous Creator Marketing Escrow & Mutual-Protection Court on GenLayer
 
 > **Agent Tank Hackathon** — Track: **Subjective Consensus & Future of Work / Creator Economy**  
-> **Target Network:** GenLayer Studionet (`Chain ID: 61999` / `0xF1EF`, RPC: `https://studio.genlayer.com/api`)
+> **Target Network:** GenLayer Studionet (`Chain ID: 61999` / `0xF1EF`, RPC: `https://studio.genlayer.com/api`)  
+> **Live Web3 dApp:** [https://adshieldpro-app.vercel.app](https://adshieldpro-app.vercel.app) (Mirror: [https://adshieldpro-genlayer.vercel.app](https://adshieldpro-genlayer.vercel.app))  
+> **GitHub Repository:** [https://github.com/luongnhan9999/adshieldpro](https://github.com/luongnhan9999/adshieldpro)
 
 ---
 
