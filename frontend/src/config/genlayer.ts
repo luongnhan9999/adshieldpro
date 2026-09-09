@@ -1,0 +1,83 @@
+import { createClient, chains } from 'genlayer-js';
+
+export const STUDIONET_CHAIN_ID = 61999;
+export const STUDIONET_CHAIN_ID_HEX = '0xF1EF';
+export const STUDIONET_RPC_URL = 'https://studio.genlayer.com/api';
+export const STUDIO_ACCOUNTS_URL = 'https://studio.genlayer.com';
+
+export const STUDIONET_CHAIN_CONFIG = {
+  chainId: STUDIONET_CHAIN_ID_HEX,
+  chainName: 'GenLayer Studionet',
+  nativeCurrency: {
+    name: 'GEN',
+    symbol: 'GEN',
+    decimals: 18,
+  },
+  rpcUrls: [STUDIONET_RPC_URL],
+  blockExplorerUrls: ['https://studio.genlayer.com'],
+};
+
+export const studionet = {
+  ...chains.simulator,
+  id: STUDIONET_CHAIN_ID,
+  name: 'GenLayer Studionet',
+  rpcUrls: {
+    default: { http: [STUDIONET_RPC_URL] },
+  },
+  blockExplorers: {
+    default: { name: 'GenLayer Studio', url: 'https://studio.genlayer.com' },
+  },
+};
+
+// Client for GenLayer Studionet read and write operations
+export const genlayerClient = createClient({
+  chain: studionet,
+  endpoint: STUDIONET_RPC_URL,
+});
+
+export const DEFAULT_CONTRACT_ADDRESS =
+  localStorage.getItem('adshield_contract_address') ||
+  '0x0000000000000000000000000000000000000000';
+
+export function getStoredContractAddress(): string {
+  return localStorage.getItem('adshield_contract_address') || DEFAULT_CONTRACT_ADDRESS;
+}
+
+export function setStoredContractAddress(address: string): void {
+  localStorage.setItem('adshield_contract_address', address.trim());
+}
+
+/**
+ * Switch or add GenLayer Studionet in MetaMask.
+ */
+export async function ensureStudionetNetwork(): Promise<boolean> {
+  if (typeof window === 'undefined' || !(window as any).ethereum) {
+    throw new Error('MetaMask is not installed. Please install MetaMask to interact with AdShield Pro.');
+  }
+
+  const ethereum = (window as any).ethereum;
+
+  try {
+    await ethereum.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: STUDIONET_CHAIN_ID_HEX }],
+    });
+    return true;
+  } catch (switchError: any) {
+    // Error code 4902 indicates chain hasn't been added yet
+    if (switchError.code === 4902 || switchError?.data?.originalError?.code === 4902) {
+      try {
+        await ethereum.request({
+          method: 'wallet_addEthereumChain',
+          params: [STUDIONET_CHAIN_CONFIG],
+        });
+        return true;
+      } catch (addError) {
+        console.error('Failed to add GenLayer Studionet to MetaMask:', addError);
+        throw addError;
+      }
+    }
+    console.error('Failed to switch to GenLayer Studionet:', switchError);
+    throw switchError;
+  }
+}

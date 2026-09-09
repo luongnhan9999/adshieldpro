@@ -1,0 +1,33 @@
+environment: .env
+
+networks:
+  default: localnet
+  localnet:
+    url: http://127.0.0.1:4000/api
+    id: 61999
+    chain_type: localnet
+    accounts:
+      - 2e509039ca19a087cd4ad7459450eb9e182267d605710a4b955a3cc376aeb2c4
+      - 73d4d88f1b8ded33b7aa0eae4e06cf67cffa2bf71a71ba1531c4b47e74bc62eb
+      - a476d0ba08e3aea5705e668121b68ef41e110511db53c6627db0edefc1ed2624
+      - 82ec4deed2429ecc9049a1d280af0cd29b8ce7cb6c89ad88f1d887186d83bc1e
+    from: 2e509039ca19a087cd4ad7459450eb9e182267d605710a4b955a3cc376aeb2c4
+    leader_only: false
+    default_wait_interval: 1000
+    default_wait_retries: 30
+
+  studionet:
+    url: https://studio.genlayer.com/api
+    id: 61999
+    chain_type: studionet
+    accounts:
+      - 2e509039ca19a087cd4ad7459450eb9e182267d605710a4b955a3cc376aeb2c4
+      - 73d4d88f1b8ded33b7aa0eae4e06cf67cffa2bf71a71ba1531c4b47e74bc62eb
+    from: 2e509039ca19a087cd4ad7459450eb9e182267d605710a4b955a3cc376aeb2c4
+    leader_only: false
+    default_wait_interval: 2000
+    default_wait_retries: 40
+
+paths:
+  contracts: contracts
+  artifacts: artifacts
