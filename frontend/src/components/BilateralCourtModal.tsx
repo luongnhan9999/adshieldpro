@@ -35,14 +35,14 @@ export const BilateralCourtModal: React.FC<BilateralCourtModalProps> = ({ isOpen
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-extrabold text-white">
-                  Hiến Chương Tòa Án Đồng Thuận Chủ Quan GenVM
+                  GenVM Subjective Consensus Court Charter
                 </h3>
                 <span className="px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 text-[10px] font-mono font-bold">
                   Bilateral Protection
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
-                Cơ chế bảo vệ quyền lợi tối cao và bình đẳng giữa Brand Sponsor &amp; Creator
+                Symmetric interest protection and equal sovereign rights for Brand Sponsors &amp; Creators
               </p>
             </div>
           </div>
@@ -61,11 +61,11 @@ export const BilateralCourtModal: React.FC<BilateralCourtModalProps> = ({ isOpen
           <div className="p-4 rounded-2xl bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-teal-500/10 border border-indigo-500/30">
             <h4 className="font-bold text-white text-sm flex items-center gap-2 mb-1.5">
               <ShieldCheck className="w-4 h-4 text-emerald-400" />
-              <span>Nguyên Tắc Trọng Tài Phi Tập Trung Trên GenLayer</span>
+              <span>Decentralized Arbitration Principles on GenLayer</span>
             </h4>
             <p className="text-slate-300 text-xs">
-              Mọi hợp đồng ký quỹ được thực thi tự động qua smart contract <strong>GenVM</strong> trên Studionet (Chain ID: 61999). 
-              Không một bên nào (kể cả admin dự án) có quyền đơn phương can thiệp, sửa đổi luật hay chiếm đoạt tiền ký quỹ.
+              Every marketing escrow agreement is executed deterministically and autonomously via <strong>GenVM</strong> intelligent contracts on Studionet (Chain ID: 61999). 
+              No central party, protocol admin, or malicious actor has the unilateral power to override consensus, alter guidelines, or confiscate escrowed funds.
             </p>
           </div>
 
@@ -77,35 +77,35 @@ export const BilateralCourtModal: React.FC<BilateralCourtModalProps> = ({ isOpen
                 <div className="p-1.5 rounded-lg bg-teal-500/10 text-teal-400">
                   <Lock className="w-4 h-4" />
                 </div>
-                <span>Quyền Lợi &amp; Bảo Vệ Cho Creator</span>
+                <span>Rights &amp; Safeguards for Content Creators</span>
               </div>
 
               <div className="space-y-2.5 text-slate-300">
                 <div className="flex items-start gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-teal-400 shrink-0 mt-0.5" />
                   <div>
-                    <strong className="text-white">Khóa Chống Hủy Kèo (Anti-Cancel Lock):</strong> Ngay khi Creator nộp link bài đăng, hợp đồng lập tức khóa tính năng hủy của Brand. Brand không thể rút tiền tháo chạy.
+                    <strong className="text-white">Anti-Cancel Escrow Lock:</strong> The moment a creator submits their deliverable link, the smart contract immediately freezes brand cancellation rights. The sponsor cannot pull back or drain funds.
                   </div>
                 </div>
 
                 <div className="flex items-start gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-teal-400 shrink-0 mt-0.5" />
                   <div>
-                    <strong className="text-white">Bảo Đảm Chống "Bùng" (Auto-Payout Timeout):</strong> Nếu Brand cố tình phớt lờ không duyệt sau khi hết hạn review (ví dụ 48h), Creator được tự động rút 100% tiền thưởng không cần Brand duyệt.
+                    <strong className="text-white">Guaranteed Auto-Payout Timeout:</strong> If a brand sponsor fails or neglects to adjudicate within the agreed review window (e.g. 48 hours), the creator can autonomously claim 100% of the bounty directly from the contract.
                   </div>
                 </div>
 
                 <div className="flex items-start gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-teal-400 shrink-0 mt-0.5" />
                   <div>
-                    <strong className="text-white">Quyền Kháng Cáo (Dispute Appeal):</strong> Nếu kết quả phán xét ban đầu là Violated, Creator có quyền stake 20% bond để mở lại phiên tòa đồng thuận với hội đồng đa validator.
+                    <strong className="text-white">Right to Dispute Appeal:</strong> In the event of an initial VIOLATED verdict, creators retain the sovereign right to stake a 20% appeal bond to trigger a full re-audit by a diverse multi-validator consensus committee.
                   </div>
                 </div>
 
                 <div className="flex items-start gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-teal-400 shrink-0 mt-0.5" />
                   <div>
-                    <strong className="text-white">Đánh Giá Bất Biến:</strong> Tòa án AI chỉ xét đúng theo tiêu chí văn bản Brand đã ghi khi gửi tiền lên on-chain. Brand không thể bịa thêm điều kiện mới.
+                    <strong className="text-white">Immutable Evaluation Scope:</strong> The AI Court strictly evaluates the deliverable against the on-chain guidelines locked at campaign creation. Sponsors cannot introduce retroactive requirements.
                   </div>
                 </div>
               </div>
@@ -117,35 +117,35 @@ export const BilateralCourtModal: React.FC<BilateralCourtModalProps> = ({ isOpen
                 <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400">
                   <Coins className="w-4 h-4" />
                 </div>
-                <span>Quyền Lợi &amp; Bảo Vệ Cho Brand Sponsor</span>
+                <span>Rights &amp; Safeguards for Brand Sponsors</span>
               </div>
 
               <div className="space-y-2.5 text-slate-300">
                 <div className="flex items-start gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-indigo-400 shrink-0 mt-0.5" />
                   <div>
-                    <strong className="text-white">Bằng Chứng Bóc Tách Trực Tiếp:</strong> Validator sử dụng `gl.nondet.web.render` để đọc live nội dung link thật. Nếu link hỏng, 404 hoặc video riêng tư, tiền sẽ tự động hoàn 100% cho Brand.
+                    <strong className="text-white">Direct Web Ground-Truth Extraction:</strong> GenVM validators execute `gl.nondet.web.render` to extract real live web text. If the deliverable is missing, 404, or private, 100% of the bounty is refunded to the brand.
                   </div>
                 </div>
 
                 <div className="flex items-start gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-indigo-400 shrink-0 mt-0.5" />
                   <div>
-                    <strong className="text-white">Ngưỡng Tuân Thủ &gt;= 70%:</strong> Creator bắt buộc phải đáp ứng hashtag, backlink và yêu cầu nội dung mới được giải ngân. Nếu dưới 70%, tiền trả về cho Brand.
+                    <strong className="text-white">Strict Compliance Threshold (&gt;= 70%):</strong> Creators must genuinely satisfy hashtags, backlinks, and talking points. Submissions scoring under 70 are rejected with an automatic refund.
                   </div>
                 </div>
 
                 <div className="flex items-start gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-indigo-400 shrink-0 mt-0.5" />
                   <div>
-                    <strong className="text-white">Hủy Kèo An Toàn Trước Khi Nhận Việc:</strong> Khi chưa có Creator nào nộp bài, Brand có toàn quyền hủy chiến dịch và lấy lại 100% số GEN đã ký quỹ ngay lập tức.
+                    <strong className="text-white">Safe Pre-Submission Cancellation:</strong> As long as no deliverable has been submitted by a creator, brand sponsors retain 100% custody recovery to cancel and withdraw escrow instantly.
                   </div>
                 </div>
 
                 <div className="flex items-start gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-indigo-400 shrink-0 mt-0.5" />
                   <div>
-                    <strong className="text-white">Quyền Kháng Cáo Cho Brand:</strong> Nếu phát hiện phán quyết COMPLIANT có sai sót, Brand cũng có quyền đặt cọc 20% appeal bond để yêu cầu re-audit.
+                    <strong className="text-white">Sponsor Dispute Appeal Right:</strong> If a faulty COMPLIANT verdict occurs, brands also hold the right to stake a 20% appeal bond to invoke higher-tier committee re-evaluation.
                   </div>
                 </div>
               </div>
@@ -155,20 +155,20 @@ export const BilateralCourtModal: React.FC<BilateralCourtModalProps> = ({ isOpen
           {/* Smart Contract Technical Safeguards */}
           <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-2">
             <h5 className="font-bold text-white uppercase text-[11px] tracking-wider text-slate-400">
-              Cơ Chế Kỹ Thuật Smart Contract (GenVM Zero-Trust)
+              Technical Smart Contract Guarantees (GenVM Zero-Trust)
             </h5>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 text-slate-300 text-[11px]">
               <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800">
-                <span className="text-slate-400 block font-bold mb-1">1. Không Trung Gian</span>
-                Tiền nằm trong smart contract, giải ngân trực tiếp qua lệnh `emit_transfer`.
+                <span className="text-slate-400 block font-bold mb-1">1. Non-Custodial Vault</span>
+                Tokens are held solely in contract escrow and settled via native `emit_transfer` calls.
               </div>
               <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800">
-                <span className="text-slate-400 block font-bold mb-1">2. Đồng Thuận Đa Node</span>
-                Hội đồng LLM đa node biểu quyết độc lập đạt Quorum &gt; 66% mới chốt phán quyết.
+                <span className="text-slate-400 block font-bold mb-1">2. Multi-Validator Quorum</span>
+                Independent validator LLMs vote in parallel; verdicts require consensus quorum (&gt; 66%).
               </div>
               <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800">
-                <span className="text-slate-400 block font-bold mb-1">3. Kháng Gian Lận 20%</span>
-                Phí appeal bond 20% ngăn chặn spam khiếu nại vô căn cứ từ cả 2 bên.
+                <span className="text-slate-400 block font-bold mb-1">3. Anti-Griefing 20% Bond</span>
+                The 20% appeal staking bond prevents frivolous dispute spam and aligns economic incentives.
               </div>
             </div>
           </div>
@@ -180,7 +180,7 @@ export const BilateralCourtModal: React.FC<BilateralCourtModalProps> = ({ isOpen
             onClick={onClose}
             className="px-6 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-md shadow-indigo-600/20"
           >
-            Đã Hiểu Bản Hiến Chương
+            I Understand the Protocol Charter
           </button>
         </div>
       </div>

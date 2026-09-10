@@ -515,7 +515,7 @@ export const App: React.FC = () => {
                 className="flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 to-teal-500 hover:from-indigo-500 hover:to-teal-400 text-white text-xs font-bold transition-all shadow-lg shadow-indigo-600/25 border border-teal-400/30"
               >
                 <Scale className="w-4 h-4 text-teal-200" />
-                <span>Hiến Chương Phán Xử Song Phương</span>
+                <span>Bilateral Protection Court Charter</span>
               </button>
 
               <button
@@ -656,9 +656,9 @@ export const App: React.FC = () => {
               <div className="flex items-center gap-3 text-indigo-200">
                 <Shield className="w-5 h-5 text-teal-400 shrink-0" />
                 <div>
-                  <div className="font-bold text-white">Chế độ On-Chain Trực Tiếp (Zero-Mock Production)</div>
+                  <div className="font-bold text-white">Live On-Chain Protocol (Zero-Mock Production)</div>
                   <div className="text-slate-300 text-[11px] mt-0.5">
-                    Hợp đồng thông minh hiện chưa có chiến dịch ký quỹ nào hoặc đang đồng bộ từ Studionet RPC. Hãy kết nối ví và khởi tạo chiến dịch để khóa GEN thật trên GenLayer!
+                    No active escrow campaigns found on this smart contract yet or syncing from Studionet RPC. Connect your wallet and create your first campaign to lock real GEN on GenLayer!
                   </div>
                 </div>
               </div>
@@ -670,7 +670,7 @@ export const App: React.FC = () => {
                 className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shrink-0 transition-colors shadow-md shadow-indigo-600/30 flex items-center gap-1.5"
               >
                 <PlusCircle className="w-3.5 h-3.5" />
-                <span>Tạo Ký Quỹ Mới</span>
+                <span>Create New Escrow</span>
               </button>
             </div>
           )}
