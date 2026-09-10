@@ -20,6 +20,7 @@ interface NavbarProps {
   chainId: number | null;
   contractAddress: string;
   onConnectWallet: () => void;
+  onSwitchNetwork?: () => void;
   onUpdateContractAddress: (newAddress: string) => void;
 }
 
@@ -29,6 +30,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   chainId,
   contractAddress,
   onConnectWallet,
+  onSwitchNetwork,
   onUpdateContractAddress,
 }) => {
   const [showConfig, setShowConfig] = useState(false);
@@ -122,13 +124,13 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Network indicator */}
           <div
-            onClick={() => !isStudionet && ensureStudionetNetwork()}
+            onClick={() => onSwitchNetwork ? onSwitchNetwork() : ensureStudionetNetwork()}
             className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-mono font-medium cursor-pointer transition-all ${
               isStudionet
                 ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/15'
                 : 'bg-rose-500/15 border-rose-500/40 text-rose-300 hover:bg-rose-500/25 animate-pulse'
             }`}
-            title={isStudionet ? 'Connected to GenLayer Studionet' : 'Click to switch to Studionet'}
+            title={isStudionet ? 'Connected to GenLayer Studionet (61999)' : 'Click to switch MetaMask to Studionet'}
           >
             <span
               className={`w-2 h-2 rounded-full ${
@@ -172,7 +174,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   {truncateAddress(userAddress)}
                 </span>
                 <span className="text-[11px] text-teal-400 font-mono font-bold">
-                  {parseFloat(balance).toFixed(3)} GEN
+                  {parseFloat(balance) > 0 ? parseFloat(balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 }) : '0.000'} GEN
                 </span>
               </div>
               <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-teal-400 p-[1px] shadow-sm">

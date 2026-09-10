@@ -11,8 +11,10 @@ import { ToastContainer, ToastMessage, fireConfetti } from './components/Toast';
 import { Campaign, CampaignStatus, Platform, ProtocolStats } from './types';
 import {
   ensureStudionetNetwork,
-  genlayerClient,
+  fetchStudionetBalance,
   getStoredContractAddress,
+  readContractStudionet,
+  sendContractTransaction,
   setStoredContractAddress,
   STUDIONET_CHAIN_ID,
 } from './config/genlayer';
@@ -83,20 +85,46 @@ export const App: React.FC = () => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
-  // Fetch balance for user
+  // Fetch balance for user (authoritative Studionet RPC + MetaMask fallback)
   const fetchBalance = useCallback(async (addr: string) => {
-    if (typeof window === 'undefined' || !(window as any).ethereum) return;
+    if (!addr) return;
     try {
-      const balanceHex = await (window as any).ethereum.request({
-        method: 'eth_getBalance',
-        params: [addr, 'latest'],
-      });
-      const balGen = formatGen(BigInt(balanceHex));
-      setBalance(balGen);
+      // 1. Direct fetch from Studionet RPC to guarantee 100% accurate real-time balance
+      const studioWei = await fetchStudionetBalance(addr);
+      if (studioWei > 0n) {
+        setBalance(formatGen(studioWei));
+        return;
+      }
+
+      // 2. Fallback to MetaMask provider
+      if (typeof window !== 'undefined' && (window as any).ethereum) {
+        const balanceHex = await (window as any).ethereum.request({
+          method: 'eth_getBalance',
+          params: [addr, 'latest'],
+        });
+        const balGen = formatGen(BigInt(balanceHex || '0'));
+        setBalance(balGen);
+      }
     } catch (e) {
       console.error('Failed to fetch balance:', e);
     }
   }, []);
+
+  // Switch network to Studionet
+  const handleSwitchNetwork = async () => {
+    try {
+      await ensureStudionetNetwork();
+      if (typeof window !== 'undefined' && (window as any).ethereum) {
+        const currentChainId = await (window as any).ethereum.request({ method: 'eth_chainId' });
+        setChainId(parseInt(currentChainId, 16));
+        if (userAddress) await fetchBalance(userAddress);
+        addToast('success', 'Network Synchronized', 'Connected to GenLayer Studionet (Chain ID 61999)');
+      }
+    } catch (err: any) {
+      console.error('Network switch failed:', err);
+      addToast('error', 'Network Switch Failed', err?.message || 'Please switch network manually in MetaMask.');
+    }
+  };
 
   // Connect MetaMask
   const handleConnectWallet = async () => {
@@ -107,7 +135,12 @@ export const App: React.FC = () => {
 
     try {
       setGlobalError(null);
-      await ensureStudionetNetwork();
+      try {
+        await ensureStudionetNetwork();
+      } catch (netErr) {
+        console.warn('Network prompt deferred:', netErr);
+      }
+
       const accounts = await (window as any).ethereum.request({
         method: 'eth_requestAccounts',
       });
@@ -180,15 +213,16 @@ export const App: React.FC = () => {
     setLoading(true);
     setGlobalError(null);
     try {
-      // 1. Fetch Stats
+      // 1. Fetch Stats via native GenLayer gen_call
       try {
-        const rawStats = await genlayerClient.readContract({
-          address: contractAddress as any,
+        const rawStats = await readContractStudionet({
+          address: contractAddress,
           functionName: 'get_stats',
           args: [],
+          from: userAddress || undefined,
         });
         if (rawStats) {
-          const parsed = JSON.parse(rawStats as string);
+          const parsed = typeof rawStats === 'string' ? JSON.parse(rawStats) : rawStats;
           setStats({
             total_campaigns: Number(parsed.total_campaigns || 0),
             total_escrow_locked: String(parsed.total_escrow_locked || '0'),
@@ -196,46 +230,50 @@ export const App: React.FC = () => {
           });
         }
       } catch (e) {
-        console.warn('Could not fetch stats:', e);
+        console.warn('Could not fetch stats via readContractStudionet:', e);
       }
 
       // 2. Fetch Campaigns via Authoritative Global Public View get_all_campaigns
       try {
         let fetchedCampaigns: Campaign[] = [];
         try {
-          const rawAll = await genlayerClient.readContract({
-            address: contractAddress as any,
+          const rawAll = await readContractStudionet({
+            address: contractAddress,
             functionName: 'get_all_campaigns',
             args: [],
+            from: userAddress || undefined,
           });
           if (rawAll) {
-            fetchedCampaigns = JSON.parse(rawAll as string);
+            fetchedCampaigns = typeof rawAll === 'string' ? JSON.parse(rawAll) : rawAll;
           }
         } catch (allErr) {
           console.warn('get_all_campaigns not available, falling back to index iteration:', allErr);
-          const rawCount = await genlayerClient.readContract({
-            address: contractAddress as any,
+          const rawCount = await readContractStudionet({
+            address: contractAddress,
             functionName: 'get_campaign_count',
             args: [],
+            from: userAddress || undefined,
           });
 
           const count = Number(rawCount || 0);
           for (let i = 0; i < count; i++) {
             try {
-              const cid = await genlayerClient.readContract({
-                address: contractAddress as any,
+              const cid = await readContractStudionet({
+                address: contractAddress,
                 functionName: 'get_campaign_id_by_index',
                 args: [i],
+                from: userAddress || undefined,
               });
 
               if (cid) {
-                const campRaw = await genlayerClient.readContract({
-                  address: contractAddress as any,
+                const campRaw = await readContractStudionet({
+                  address: contractAddress,
                   functionName: 'get_campaign',
                   args: [cid as string],
+                  from: userAddress || undefined,
                 });
                 if (campRaw) {
-                  fetchedCampaigns.push(JSON.parse(campRaw as string));
+                  fetchedCampaigns.push(typeof campRaw === 'string' ? JSON.parse(campRaw) : campRaw);
                 }
               }
             } catch (itemErr) {
@@ -244,9 +282,10 @@ export const App: React.FC = () => {
           }
         }
 
-        // Sort latest first
-        fetchedCampaigns.reverse();
-        setCampaigns(fetchedCampaigns);
+        if (Array.isArray(fetchedCampaigns)) {
+          fetchedCampaigns.reverse();
+          setCampaigns(fetchedCampaigns);
+        }
       } catch (countErr) {
         console.warn('Could not read campaign list:', countErr);
       }
@@ -255,7 +294,7 @@ export const App: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [contractAddress]);
+  }, [contractAddress, userAddress]);
 
   useEffect(() => {
     fetchContractData();
@@ -271,6 +310,9 @@ export const App: React.FC = () => {
     if (!contractAddress || contractAddress === '0x0000000000000000000000000000000000000000') {
       throw new Error('Please configure a valid deployed contract address first (click Settings in top bar).');
     }
+    if (!userAddress) {
+      throw new Error('Please connect your MetaMask wallet first.');
+    }
 
     const valueWei = toWei(bountyGen);
     setActionLoading('create');
@@ -278,14 +320,15 @@ export const App: React.FC = () => {
     try {
       await ensureStudionetNetwork();
 
-      const txHash = await (genlayerClient as any).writeContract({
-        address: contractAddress as `0x${string}`,
+      await sendContractTransaction({
+        address: contractAddress,
         functionName: 'create_campaign',
         args: [guidelines, platform, timeoutSeconds],
+        from: userAddress,
         value: valueWei,
       });
 
-      addToast('success', 'Escrow Deployed & Locked!', `${bountyGen} GEN deposited. Verified on GenVM.`);
+      addToast('success', 'Escrow Deployed & Locked!', `${bountyGen} GEN deposited on-chain.`);
       if (userAddress) fetchBalance(userAddress);
       await fetchContractData();
     } catch (err: any) {
@@ -301,14 +344,18 @@ export const App: React.FC = () => {
     if (!contractAddress || contractAddress === '0x0000000000000000000000000000000000000000') {
       throw new Error('Contract address not configured.');
     }
+    if (!userAddress) {
+      throw new Error('Please connect your MetaMask wallet first.');
+    }
 
     setActionLoading(campaignId);
     try {
       await ensureStudionetNetwork();
-      await (genlayerClient as any).writeContract({
-        address: contractAddress as `0x${string}`,
+      await sendContractTransaction({
+        address: contractAddress,
         functionName: 'submit_content',
         args: [campaignId, deliverableUrl],
+        from: userAddress,
       });
       addToast('success', 'Deliverable Submitted!', `Anti-Cancel Lock activated for ${campaignId}. Escrow secured.`);
       await fetchContractData();
@@ -322,14 +369,21 @@ export const App: React.FC = () => {
 
   // Adjudicate
   const handleAdjudicate = async (campaignId: string) => {
+    if (!contractAddress) return;
+    if (!userAddress) {
+      addToast('error', 'Wallet Required', 'Please connect your wallet.');
+      return;
+    }
+
     setActionLoading(campaignId);
     try {
       await ensureStudionetNetwork();
-      addToast('info', 'AI Court Initiated', `GenVM validators rendering web deliverable for ${campaignId}...`);
-      await (genlayerClient as any).writeContract({
-        address: contractAddress as `0x${string}`,
+      addToast('info', 'AI Court Initiated', `GenVM consensus evaluation running for ${campaignId}...`);
+      await sendContractTransaction({
+        address: contractAddress,
         functionName: 'adjudicate',
         args: [campaignId],
+        from: userAddress,
       });
       fireConfetti();
       addToast('success', 'Adjudication Complete', `Consensus verdict rendered for ${campaignId}.`);
@@ -344,13 +398,20 @@ export const App: React.FC = () => {
 
   // Claim Timeout
   const handleClaimTimeout = async (campaignId: string) => {
+    if (!contractAddress) return;
+    if (!userAddress) {
+      addToast('error', 'Wallet Required', 'Please connect your wallet.');
+      return;
+    }
+
     setActionLoading(campaignId);
     try {
       await ensureStudionetNetwork();
-      await (genlayerClient as any).writeContract({
-        address: contractAddress as `0x${string}`,
+      await sendContractTransaction({
+        address: contractAddress,
         functionName: 'claim_timeout_payout',
         args: [campaignId],
+        from: userAddress,
       });
       fireConfetti();
       addToast('success', 'Auto-Payout Claimed!', `Bounty transferred directly to creator wallet.`);
@@ -365,13 +426,20 @@ export const App: React.FC = () => {
 
   // File Appeal
   const handleFileAppeal = async (campaignId: string, minBondWei: string) => {
+    if (!contractAddress) return;
+    if (!userAddress) {
+      addToast('error', 'Wallet Required', 'Please connect your wallet.');
+      return;
+    }
+
     setActionLoading(campaignId);
     try {
       await ensureStudionetNetwork();
-      await (genlayerClient as any).writeContract({
-        address: contractAddress as `0x${string}`,
+      await sendContractTransaction({
+        address: contractAddress,
         functionName: 'file_dispute_appeal',
         args: [campaignId],
+        from: userAddress,
         value: BigInt(minBondWei),
       });
       addToast('warning', 'Appeal Staked!', `20% bond locked. Multi-validator consensus re-review initiated.`);
@@ -386,13 +454,20 @@ export const App: React.FC = () => {
 
   // Finalize Settlement (after 24h cooling-off window)
   const handleFinalizeSettlement = async (campaignId: string) => {
+    if (!contractAddress) return;
+    if (!userAddress) {
+      addToast('error', 'Wallet Required', 'Please connect your wallet.');
+      return;
+    }
+
     setActionLoading(campaignId);
     try {
       await ensureStudionetNetwork();
-      await (genlayerClient as any).writeContract({
-        address: contractAddress as `0x${string}`,
+      await sendContractTransaction({
+        address: contractAddress,
         functionName: 'finalize_settlement',
         args: [campaignId],
+        from: userAddress,
       });
       fireConfetti();
       addToast('success', 'Settlement Finalized!', `Escrow released and transferred according to court consensus.`);
@@ -407,6 +482,12 @@ export const App: React.FC = () => {
 
   // Cancel Campaign
   const handleCancel = async (campaignId: string) => {
+    if (!contractAddress) return;
+    if (!userAddress) {
+      addToast('error', 'Wallet Required', 'Please connect your wallet.');
+      return;
+    }
+
     if (!confirm('Are you sure you want to cancel this campaign? The escrow bounty will be refunded to your wallet.')) {
       return;
     }
@@ -414,10 +495,11 @@ export const App: React.FC = () => {
     setActionLoading(campaignId);
     try {
       await ensureStudionetNetwork();
-      await (genlayerClient as any).writeContract({
-        address: contractAddress as `0x${string}`,
+      await sendContractTransaction({
+        address: contractAddress,
         functionName: 'cancel_campaign',
         args: [campaignId],
+        from: userAddress,
       });
       addToast('info', 'Campaign Cancelled', `Escrow bounty refunded to brand.`);
       if (userAddress) fetchBalance(userAddress);
@@ -497,6 +579,7 @@ export const App: React.FC = () => {
         chainId={chainId}
         contractAddress={contractAddress}
         onConnectWallet={handleConnectWallet}
+        onSwitchNetwork={handleSwitchNetwork}
         onUpdateContractAddress={handleUpdateContract}
       />
 
