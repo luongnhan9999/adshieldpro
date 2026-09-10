@@ -221,12 +221,12 @@ export const App: React.FC = () => {
   }, [fetchBalance, userAddress]);
 
   // Load contract data from Studionet
-  const fetchContractData = useCallback(async () => {
+  const fetchContractData = useCallback(async (isSilent = false) => {
     if (!contractAddress || contractAddress === '0x0000000000000000000000000000000000000000') {
       return;
     }
 
-    setLoading(true);
+    if (!isSilent) setLoading(true);
     setGlobalError(null);
     try {
       // 0. Fetch contract's on-chain vault balance
@@ -316,13 +316,19 @@ export const App: React.FC = () => {
     } catch (err: any) {
       console.error('Contract read failed:', err);
     } finally {
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     }
   }, [contractAddress, userAddress]);
 
+  // Periodic background auto-sync every 4 seconds (100% automatic real-time updates without F5)
   useEffect(() => {
     fetchContractData();
-  }, [fetchContractData]);
+    const timer = setInterval(() => {
+      fetchContractData(true);
+      if (userAddress) fetchBalance(userAddress);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [fetchContractData, fetchBalance, userAddress]);
 
   // Consensus Poller: Polls contract data after a state write transaction until GenVM consensus finalizes
   const pollConsensusSync = useCallback(
@@ -330,7 +336,7 @@ export const App: React.FC = () => {
       // 6 intervals of 3.5s ~ 21s, ideal for GenVM consensus finality
       for (let i = 0; i < 6; i++) {
         await new Promise((r) => setTimeout(r, 3500));
-        await fetchContractData();
+        await fetchContractData(true);
         if (userAddress) fetchBalance(userAddress);
       }
       addToast('success', 'Consensus Synchronized', successMessage);
@@ -397,7 +403,8 @@ export const App: React.FC = () => {
         from: userAddress,
       });
       addToast('success', 'Deliverable Submitted!', `Anti-Cancel Lock activated for ${campaignId}. Escrow secured.`);
-      await fetchContractData();
+      await fetchContractData(true);
+      pollConsensusSync('Content submission confirmed on GenVM.');
     } catch (err: any) {
       addToast('error', 'Submission Failed', err?.message || 'Transaction error.');
       throw err;
@@ -427,7 +434,8 @@ export const App: React.FC = () => {
       fireConfetti();
       addToast('success', 'Adjudication Complete', `Consensus verdict rendered for ${campaignId}.`);
       if (userAddress) fetchBalance(userAddress);
-      await fetchContractData();
+      await fetchContractData(true);
+      pollConsensusSync('AI Court verdict finalized on-chain.');
     } catch (e: any) {
       addToast('error', 'Adjudication Failed', e?.message || String(e));
     } finally {
@@ -455,7 +463,8 @@ export const App: React.FC = () => {
       fireConfetti();
       addToast('success', 'Auto-Payout Claimed!', `Bounty transferred directly to creator wallet.`);
       if (userAddress) fetchBalance(userAddress);
-      await fetchContractData();
+      await fetchContractData(true);
+      pollConsensusSync('Auto-payout claimed and finalized on-chain.');
     } catch (e: any) {
       addToast('error', 'Claim Failed', e?.message || String(e));
     } finally {
@@ -483,7 +492,8 @@ export const App: React.FC = () => {
       });
       addToast('warning', 'Appeal Staked!', `20% bond locked. Multi-validator consensus re-review initiated.`);
       if (userAddress) fetchBalance(userAddress);
-      await fetchContractData();
+      await fetchContractData(true);
+      pollConsensusSync('Appeal staked and consensus re-evaluation started.');
     } catch (e: any) {
       addToast('error', 'Appeal Failed', e?.message || String(e));
     } finally {
@@ -511,7 +521,8 @@ export const App: React.FC = () => {
       fireConfetti();
       addToast('success', 'Settlement Finalized!', `Escrow released and transferred according to court consensus.`);
       if (userAddress) fetchBalance(userAddress);
-      await fetchContractData();
+      await fetchContractData(true);
+      pollConsensusSync('Settlement release completed on-chain.');
     } catch (e: any) {
       addToast('error', 'Finalization Failed', e?.message || String(e));
     } finally {
@@ -542,7 +553,8 @@ export const App: React.FC = () => {
       });
       addToast('info', 'Campaign Cancelled', `Escrow bounty refunded to brand.`);
       if (userAddress) fetchBalance(userAddress);
-      await fetchContractData();
+      await fetchContractData(true);
+      pollConsensusSync('Campaign cancellation confirmed on-chain.');
     } catch (e: any) {
       addToast('error', 'Cancellation Failed', e?.message || String(e));
     } finally {
@@ -678,7 +690,7 @@ export const App: React.FC = () => {
               </button>
 
               <button
-                onClick={fetchContractData}
+                onClick={() => fetchContractData()}
                 disabled={loading}
                 className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-slate-900/90 hover:bg-slate-850 text-slate-200 hover:text-white border border-slate-700/80 text-xs font-bold transition-all shadow-lg hover:shadow-indigo-500/10"
               >
@@ -849,13 +861,17 @@ export const App: React.FC = () => {
                     </span>
                   </h2>
                   <button
-                    onClick={fetchContractData}
+                    onClick={() => fetchContractData()}
                     disabled={loading}
-                    title="Sync on-chain state from Studionet"
+                    title="Manual sync on-chain state from Studionet"
                     className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-400 hover:text-indigo-300 transition-colors"
                   >
                     <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
                   </button>
+                  <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-mono border border-emerald-500/20">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span>Live Auto-Sync (4s)</span>
+                  </span>
                 </div>
               </div>
 
