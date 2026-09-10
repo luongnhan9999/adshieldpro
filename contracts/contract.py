@@ -4,12 +4,6 @@ from dataclasses import dataclass
 import json
 
 
-def _addr_str(addr: Address) -> str:
-    try:
-        return addr.as_hex
-    except Exception:
-        return str(addr)
-
 
 @allow_storage
 @dataclass

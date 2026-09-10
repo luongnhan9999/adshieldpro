@@ -3,7 +3,7 @@
 
 > **Agent Tank Hackathon** — Track: **Subjective Consensus & Future of Work / Creator Economy**  
 > **Target Network:** GenLayer Studionet (`Chain ID: 61999` / `0xF1EF`, RPC: `https://studio.genlayer.com/api`)  
-> **Deployed Contract Address:** `0x0EA45978D1960B5286b63aeb574Fb0dfA37833bF`  
+> **Deployed Contract Address:** `0x916E0030A988f99680b314AA17eCD9Ce70907D03`  
 > **Live Web3 dApp:** [https://adshieldpro-app.vercel.app](https://adshieldpro-app.vercel.app) (Mirror: [https://adshieldpro-genlayer.vercel.app](https://adshieldpro-genlayer.vercel.app))  
 > **GitHub Repository:** [https://github.com/luongnhan9999/adshieldpro](https://github.com/luongnhan9999/adshieldpro)
 
@@ -157,7 +157,7 @@ npm run build
 ---
 
 ## 🚀 Deployed Smart Contract on GenLayer Studionet
-- **Contract Address:** `0x0EA45978D1960B5286b63aeb574Fb0dfA37833bF`
+- **Contract Address:** `0x916E0030A988f99680b314AA17eCD9Ce70907D03`
 - **Network:** GenLayer Studionet (`61999` / `0xF1EF`)
 - **RPC URL:** `https://studio.genlayer.com/api`
 - **GenLayer Studio:** [https://studio.genlayer.com](https://studio.genlayer.com)
