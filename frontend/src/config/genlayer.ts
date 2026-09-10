@@ -1,5 +1,6 @@
 import { createClient, chains } from 'genlayer-js';
-import { encodeCalldata, encodeAndSerializeCalldata, decodeCalldataString } from '../utils/calldata';
+import { toRlp } from 'viem';
+import { encodeCalldata, encodeAddTransaction, decodeCalldataString } from '../utils/calldata';
 
 export const STUDIONET_CHAIN_ID = 61999;
 export const STUDIONET_CHAIN_ID_HEX = '0xF22F';
@@ -169,12 +170,20 @@ export async function sendContractTransaction(params: {
   }
 
   const { address, functionName, args, from, value = 0n } = params;
-  const data = encodeAndSerializeCalldata({ method: functionName, args });
+
+  // 1. Encode GenVM method and arguments
+  const calldataHex = encodeCalldata({ method: functionName, args });
+
+  // 2. Wrap into RLP pair [calldata, "0x"] (standard GenLayer transaction format)
+  const txDataRlp = toRlp([calldataHex, '0x']);
+
+  // 3. Wrap in GenLayer Consensus rollup envelope (0x27241a99)
+  const callData = encodeAddTransaction(from, address, 5, 3, txDataRlp);
 
   const txParams: any = {
     from,
     to: address,
-    data,
+    data: callData,
     value: value > 0n ? `0x${value.toString(16)}` : '0x0',
   };
 

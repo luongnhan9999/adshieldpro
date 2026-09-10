@@ -1,4 +1,4 @@
-import { toRlp, toHex } from 'viem';
+import { toRlp, toHex, encodeAbiParameters, parseAbiParameters } from 'viem';
 
 const BITS_IN_TYPE = 3;
 const TYPE_SPECIAL = 0;
@@ -148,3 +148,29 @@ export function decodeCalldataString(rawHex: string): string {
   const payloadBytes = new Uint8Array(bytes.slice(offset));
   return new TextDecoder().decode(payloadBytes);
 }
+
+/**
+ * Wraps transaction into GenLayer Consensus rollup envelope (selector 0x27241a99).
+ * Crucial for MetaMask eth_sendTransaction on GenLayer Studionet / Testnet.
+ */
+export function encodeAddTransaction(
+  sender: string,
+  recipient: string,
+  numValidators: number = 5,
+  maxRotations: number = 3,
+  txDataRlp: string
+): `0x${string}` {
+  const selector = '0x27241a99';
+  const encodedParams = encodeAbiParameters(
+    parseAbiParameters('address, address, uint256, uint256, bytes'),
+    [
+      sender as `0x${string}`,
+      recipient as `0x${string}`,
+      BigInt(numValidators),
+      BigInt(maxRotations),
+      txDataRlp as `0x${string}`,
+    ]
+  );
+  return `${selector}${encodedParams.slice(2)}` as `0x${string}`;
+}
+
