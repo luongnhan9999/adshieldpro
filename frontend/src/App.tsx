@@ -50,6 +50,7 @@ export const App: React.FC = () => {
     total_escrow_locked: '0',
     total_campaigns_settled: 0,
   });
+  const [contractBalance, setContractBalance] = useState<string>('0');
 
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(false);
@@ -228,6 +229,14 @@ export const App: React.FC = () => {
     setLoading(true);
     setGlobalError(null);
     try {
+      // 0. Fetch contract's on-chain vault balance
+      try {
+        const cWei = await fetchStudionetBalance(contractAddress);
+        setContractBalance(formatGen(cWei));
+      } catch (cErr) {
+        console.warn('Could not fetch contract balance:', cErr);
+      }
+
       // 1. Fetch Stats via native GenLayer gen_call
       try {
         const rawStats = await readContractStudionet({
@@ -315,6 +324,20 @@ export const App: React.FC = () => {
     fetchContractData();
   }, [fetchContractData]);
 
+  // Consensus Poller: Polls contract data after a state write transaction until GenVM consensus finalizes
+  const pollConsensusSync = useCallback(
+    async (successMessage: string) => {
+      // 6 intervals of 3.5s ~ 21s, ideal for GenVM consensus finality
+      for (let i = 0; i < 6; i++) {
+        await new Promise((r) => setTimeout(r, 3500));
+        await fetchContractData();
+        if (userAddress) fetchBalance(userAddress);
+      }
+      addToast('success', 'Consensus Synchronized', successMessage);
+    },
+    [fetchContractData, fetchBalance, userAddress]
+  );
+
   // Create Campaign
   const handleCreateCampaign = async (
     guidelines: string,
@@ -343,9 +366,10 @@ export const App: React.FC = () => {
         value: valueWei,
       });
 
-      addToast('success', 'Escrow Deployed & Locked!', `${bountyGen} GEN deposited on-chain.`);
+      addToast('success', 'Escrow Deployed & Locked!', `${bountyGen} GEN deposited. Finalizing on GenVM...`);
       if (userAddress) fetchBalance(userAddress);
       await fetchContractData();
+      pollConsensusSync('Campaign is now registered and visible on-chain.');
     } catch (err: any) {
       addToast('error', 'Deployment Failed', err?.message || 'Transaction error.');
       throw err;
@@ -673,7 +697,7 @@ export const App: React.FC = () => {
         )}
 
         {/* Stats Section */}
-        <StatsBar stats={stats} loading={loading} />
+        <StatsBar stats={stats} loading={loading} contractBalance={contractBalance} />
 
         {/* Role Portal Switcher */}
         <div className="mb-6 p-1.5 rounded-2xl bg-slate-950/80 border border-slate-800 flex flex-wrap items-center justify-between gap-2 shadow-lg">
@@ -817,13 +841,21 @@ export const App: React.FC = () => {
                 <div className="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
                   <Layers className="w-5 h-5" />
                 </div>
-                <div>
+                <div className="flex items-center gap-2">
                   <h2 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
                     <span>Escrow Registry &amp; Consensus Court</span>
                     <span className="px-2.5 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-indigo-300 text-xs font-mono font-bold">
                       {filteredAndSortedCampaigns.length}
                     </span>
                   </h2>
+                  <button
+                    onClick={fetchContractData}
+                    disabled={loading}
+                    title="Sync on-chain state from Studionet"
+                    className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-400 hover:text-indigo-300 transition-colors"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+                  </button>
                 </div>
               </div>
 

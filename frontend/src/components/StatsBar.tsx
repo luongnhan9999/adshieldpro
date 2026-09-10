@@ -6,12 +6,13 @@ import { formatGen } from '../utils/formatters';
 interface StatsBarProps {
   stats: ProtocolStats;
   loading: boolean;
+  contractBalance?: string;
 }
 
-export const StatsBar: React.FC<StatsBarProps> = ({ stats, loading }) => {
+export const StatsBar: React.FC<StatsBarProps> = ({ stats, loading, contractBalance }) => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-      {/* Stat 1: Total Escrow Locked */}
+      {/* Stat 1: Total Escrow Locked & Vault Balance */}
       <div className="glass-panel-interactive rounded-3xl p-5 relative overflow-hidden group">
         <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-600/10 rounded-full blur-2xl group-hover:bg-indigo-600/20 transition-all pointer-events-none" />
         <div className="flex items-center justify-between">
@@ -29,11 +30,14 @@ export const StatsBar: React.FC<StatsBarProps> = ({ stats, loading }) => {
             <span>{loading ? '...' : formatGen(stats.total_escrow_locked)}</span>
             <span className="text-sm font-sans font-bold text-indigo-400">GEN</span>
           </div>
-          <div className="flex items-center gap-2 mt-2">
-            <div className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
-            <p className="text-[11px] text-slate-400">
-              Autonomous smart lock on GenVM
-            </p>
+          <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-800/60">
+            <span className="text-[11px] text-slate-400 flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
+              <span>Contract Vault:</span>
+            </span>
+            <span className="text-xs font-mono font-bold text-teal-300">
+              {contractBalance ? `${contractBalance} GEN` : '...'}
+            </span>
           </div>
         </div>
       </div>
