@@ -9,7 +9,9 @@ import {
   Activity,
   Copy,
   Check,
-  AlertCircle
+  AlertCircle,
+  LogOut,
+  ChevronDown
 } from 'lucide-react';
 import { truncateAddress } from '../utils/formatters';
 import { STUDIONET_CHAIN_ID, STUDIONET_RPC_URL, STUDIO_ACCOUNTS_URL, ensureStudionetNetwork } from '../config/genlayer';
@@ -20,6 +22,7 @@ interface NavbarProps {
   chainId: number | null;
   contractAddress: string;
   onConnectWallet: () => void;
+  onDisconnectWallet: () => void;
   onSwitchNetwork?: () => void;
   onUpdateContractAddress: (newAddress: string) => void;
 }
@@ -30,15 +33,34 @@ export const Navbar: React.FC<NavbarProps> = ({
   chainId,
   contractAddress,
   onConnectWallet,
+  onDisconnectWallet,
   onSwitchNetwork,
   onUpdateContractAddress,
 }) => {
   const [showConfig, setShowConfig] = useState(false);
+  const [showAccountMenu, setShowAccountMenu] = useState(false);
   const [tempAddress, setTempAddress] = useState(contractAddress);
   const [copied, setCopied] = useState(false);
+  const [accountCopied, setAccountCopied] = useState(false);
   const [rpcPing, setRpcPing] = useState<number | null>(null);
 
   const isStudionet = chainId === STUDIONET_CHAIN_ID;
+
+  // Close account menu on outside click
+  useEffect(() => {
+    const handleDocumentClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('#account-dropdown-container')) {
+        setShowAccountMenu(false);
+      }
+    };
+    if (showAccountMenu) {
+      document.addEventListener('click', handleDocumentClick);
+    }
+    return () => {
+      document.removeEventListener('click', handleDocumentClick);
+    };
+  }, [showAccountMenu]);
 
   // Monitor Studionet RPC latency
   useEffect(() => {
@@ -166,22 +188,114 @@ export const Navbar: React.FC<NavbarProps> = ({
             <Settings className="w-4 h-4" />
           </button>
 
-          {/* Connect / User Info */}
+          {/* Connect / User Info & Disconnect */}
           {userAddress ? (
-            <div className="flex items-center gap-2 p-1.5 pl-3 rounded-2xl bg-slate-900/90 border border-slate-700/80 shadow-inner">
-              <div className="flex flex-col items-end text-right">
-                <span className="text-xs font-semibold text-slate-200 font-mono">
-                  {truncateAddress(userAddress)}
-                </span>
-                <span className="text-[11px] text-teal-400 font-mono font-bold">
-                  {parseFloat(balance) > 0 ? parseFloat(balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 }) : '0.000'} GEN
-                </span>
-              </div>
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-teal-400 p-[1px] shadow-sm">
-                <div className="w-full h-full bg-slate-900 rounded-[11px] flex items-center justify-center">
-                  <CheckCircle2 className="w-4 h-4 text-teal-400" />
+            <div id="account-dropdown-container" className="relative flex items-center gap-1.5">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowAccountMenu(!showAccountMenu);
+                }}
+                className="flex items-center gap-2 p-1.5 pl-3 rounded-2xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-700/80 shadow-inner transition-all group"
+                title="View account details"
+              >
+                <div className="flex flex-col items-end text-right">
+                  <span className="text-xs font-semibold text-slate-200 font-mono group-hover:text-white transition-colors">
+                    {truncateAddress(userAddress)}
+                  </span>
+                  <span className="text-[11px] text-teal-400 font-mono font-bold">
+                    {parseFloat(balance) > 0 ? parseFloat(balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 }) : '0.000'} GEN
+                  </span>
                 </div>
-              </div>
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-teal-400 p-[1px] shadow-sm">
+                  <div className="w-full h-full bg-slate-900 rounded-[11px] flex items-center justify-center">
+                    <CheckCircle2 className="w-4 h-4 text-teal-400" />
+                  </div>
+                </div>
+                <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${showAccountMenu ? 'rotate-180 text-white' : ''}`} />
+              </button>
+
+              {/* Direct Quick Disconnect Button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDisconnectWallet();
+                }}
+                className="p-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 transition-all hover:scale-105 active:scale-95 flex items-center justify-center"
+                title="Disconnect Wallet"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+
+              {/* Account Dropdown Menu */}
+              {showAccountMenu && (
+                <div className="absolute right-0 top-full mt-2 w-72 rounded-2xl bg-[#080d1a]/98 border border-slate-700/90 shadow-2xl p-4 z-50 backdrop-blur-2xl animate-in fade-in slide-in-from-top-2">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="text-xs font-bold text-slate-200 uppercase tracking-wider">Connected Wallet</span>
+                    </div>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                      Studionet 61999
+                    </span>
+                  </div>
+
+                  <div className="my-3 p-3 rounded-xl bg-slate-950 border border-slate-800/80 font-mono">
+                    <div className="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Account Address</div>
+                    <div className="text-xs text-slate-200 break-all select-all font-semibold">
+                      {userAddress}
+                    </div>
+                    <div className="mt-2.5 pt-2 border-t border-slate-800 flex items-center justify-between">
+                      <span className="text-[11px] text-slate-400">Balance:</span>
+                      <span className="text-xs text-teal-300 font-bold">
+                        {parseFloat(balance) > 0 ? parseFloat(balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 }) : '0.000'} GEN
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <button
+                      onClick={() => {
+                        if (userAddress) {
+                          navigator.clipboard.writeText(userAddress);
+                          setAccountCopied(true);
+                          setTimeout(() => setAccountCopied(false), 2000);
+                        }
+                      }}
+                      className="flex items-center justify-between w-full px-3 py-2 rounded-xl text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Copy className="w-3.5 h-3.5 text-indigo-400" />
+                        <span>Copy Full Address</span>
+                      </div>
+                      {accountCopied && <span className="text-[10px] text-emerald-400 font-bold">Copied!</span>}
+                    </button>
+
+                    <a
+                      href={STUDIO_ACCOUNTS_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5 text-indigo-400" />
+                      <span>View in GenLayer Studio</span>
+                    </a>
+
+                    <div className="my-1 border-t border-slate-800/80" />
+
+                    <button
+                      onClick={() => {
+                        setShowAccountMenu(false);
+                        onDisconnectWallet();
+                      }}
+                      className="flex items-center justify-center gap-2 w-full px-3 py-2.5 rounded-xl text-xs font-bold text-rose-400 hover:text-white hover:bg-rose-600 bg-rose-500/15 border border-rose-500/30 transition-all shadow-sm active:scale-[0.98]"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span>Disconnect Wallet</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <button

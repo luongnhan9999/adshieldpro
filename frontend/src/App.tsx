@@ -135,6 +135,8 @@ export const App: React.FC = () => {
 
     try {
       setGlobalError(null);
+      sessionStorage.removeItem('adshield_user_disconnected');
+
       try {
         await ensureStudionetNetwork();
       } catch (netErr) {
@@ -162,6 +164,14 @@ export const App: React.FC = () => {
     }
   };
 
+  // Disconnect Wallet
+  const handleDisconnectWallet = () => {
+    setUserAddress(null);
+    setBalance('0');
+    sessionStorage.setItem('adshield_user_disconnected', 'true');
+    addToast('info', 'Wallet Disconnected', 'You have disconnected your wallet from AdShield Pro.');
+  };
+
   // Listen to account/chain changes
   useEffect(() => {
     if (typeof window === 'undefined' || !(window as any).ethereum) return;
@@ -169,6 +179,9 @@ export const App: React.FC = () => {
     const ethereum = (window as any).ethereum;
 
     const handleAccountsChanged = (accounts: string[]) => {
+      if (sessionStorage.getItem('adshield_user_disconnected') === 'true') {
+        return;
+      }
       if (accounts.length > 0) {
         setUserAddress(accounts[0]);
         fetchBalance(accounts[0]);
@@ -186,13 +199,15 @@ export const App: React.FC = () => {
     ethereum.on('accountsChanged', handleAccountsChanged);
     ethereum.on('chainChanged', handleChainChanged);
 
-    // Initial check
-    ethereum.request({ method: 'eth_accounts' }).then((accs: string[]) => {
-      if (accs.length > 0) {
-        setUserAddress(accs[0]);
-        fetchBalance(accs[0]);
-      }
-    });
+    // Initial check (only reconnect if user didn't explicitly disconnect)
+    if (sessionStorage.getItem('adshield_user_disconnected') !== 'true') {
+      ethereum.request({ method: 'eth_accounts' }).then((accs: string[]) => {
+        if (accs.length > 0) {
+          setUserAddress(accs[0]);
+          fetchBalance(accs[0]);
+        }
+      });
+    }
 
     ethereum.request({ method: 'eth_chainId' }).then((cid: string) => {
       setChainId(parseInt(cid, 16));
@@ -579,6 +594,7 @@ export const App: React.FC = () => {
         chainId={chainId}
         contractAddress={contractAddress}
         onConnectWallet={handleConnectWallet}
+        onDisconnectWallet={handleDisconnectWallet}
         onSwitchNetwork={handleSwitchNetwork}
         onUpdateContractAddress={handleUpdateContract}
       />
