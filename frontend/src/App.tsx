@@ -393,6 +393,12 @@ export const App: React.FC = () => {
       throw new Error('Please connect your MetaMask wallet first.');
     }
 
+    const targetCamp = campaigns.find((c) => c.campaign_id === campaignId);
+    if (targetCamp && targetCamp.brand.toLowerCase() === userAddress.toLowerCase()) {
+      addToast('error', 'Action Disallowed', 'Brand Sponsor cannot submit deliverables to their own campaign.');
+      return;
+    }
+
     setActionLoading(campaignId);
     try {
       await ensureStudionetNetwork();
@@ -419,6 +425,17 @@ export const App: React.FC = () => {
     if (!userAddress) {
       addToast('error', 'Wallet Required', 'Please connect your wallet.');
       return;
+    }
+
+    const targetCamp = campaigns.find((c) => c.campaign_id === campaignId);
+    if (targetCamp) {
+      const u = userAddress.toLowerCase();
+      const isBrand = targetCamp.brand.toLowerCase() === u;
+      const isCreator = targetCamp.creator.toLowerCase() === u;
+      if (!isBrand && !isCreator) {
+        addToast('error', 'Access Denied', 'Only Brand Sponsor or Assigned Creator can trigger adjudication.');
+        return;
+      }
     }
 
     setActionLoading(campaignId);
@@ -451,6 +468,12 @@ export const App: React.FC = () => {
       return;
     }
 
+    const targetCamp = campaigns.find((c) => c.campaign_id === campaignId);
+    if (targetCamp && targetCamp.creator.toLowerCase() !== userAddress.toLowerCase()) {
+      addToast('error', 'Access Denied', 'Only the Assigned Creator can claim timeout auto-payout.');
+      return;
+    }
+
     setActionLoading(campaignId);
     try {
       await ensureStudionetNetwork();
@@ -478,6 +501,17 @@ export const App: React.FC = () => {
     if (!userAddress) {
       addToast('error', 'Wallet Required', 'Please connect your wallet.');
       return;
+    }
+
+    const targetCamp = campaigns.find((c) => c.campaign_id === campaignId);
+    if (targetCamp) {
+      const u = userAddress.toLowerCase();
+      const isBrand = targetCamp.brand.toLowerCase() === u;
+      const isCreator = targetCamp.creator.toLowerCase() === u;
+      if (!isBrand && !isCreator) {
+        addToast('error', 'Access Denied', 'Only Brand Sponsor or Assigned Creator can file a dispute appeal.');
+        return;
+      }
     }
 
     setActionLoading(campaignId);
@@ -509,6 +543,17 @@ export const App: React.FC = () => {
       return;
     }
 
+    const targetCamp = campaigns.find((c) => c.campaign_id === campaignId);
+    if (targetCamp) {
+      const u = userAddress.toLowerCase();
+      const isBrand = targetCamp.brand.toLowerCase() === u;
+      const isCreator = targetCamp.creator.toLowerCase() === u;
+      if (!isBrand && !isCreator) {
+        addToast('error', 'Access Denied', 'Only Brand Sponsor or Assigned Creator can finalize settlement.');
+        return;
+      }
+    }
+
     setActionLoading(campaignId);
     try {
       await ensureStudionetNetwork();
@@ -535,6 +580,12 @@ export const App: React.FC = () => {
     if (!contractAddress) return;
     if (!userAddress) {
       addToast('error', 'Wallet Required', 'Please connect your wallet.');
+      return;
+    }
+
+    const targetCamp = campaigns.find((c) => c.campaign_id === campaignId);
+    if (targetCamp && targetCamp.brand.toLowerCase() !== userAddress.toLowerCase()) {
+      addToast('error', 'Access Denied', 'Only the Brand Sponsor can cancel this campaign.');
       return;
     }
 

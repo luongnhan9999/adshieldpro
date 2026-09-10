@@ -185,7 +185,7 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({
           <div className="mb-4 px-3 py-2 rounded-2xl bg-teal-500/15 border border-teal-500/30 text-teal-300 text-[11px] font-bold flex items-center justify-between shadow-sm">
             <span className="flex items-center gap-1.5">
               <Send className="w-3.5 h-3.5 text-teal-400" />
-              <span>ROLE: PROTECTED CREATOR</span>
+              <span>ROLE: ASSIGNED CREATOR</span>
             </span>
             <span className="text-[10px] font-mono bg-teal-500/20 px-2 py-0.5 rounded-md text-teal-200">
               Anti-Cancel &amp; Auto-Payout Right
@@ -193,12 +193,14 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({
           </div>
         )}
         {!isBrand && !isCreator && (
-          <div className="mb-4 px-3 py-1.5 rounded-xl bg-slate-950/60 border border-slate-800/80 text-slate-400 text-[11px] flex items-center justify-between">
+          <div className="mb-4 px-3 py-2 rounded-2xl bg-slate-900/80 border border-slate-800 text-slate-400 text-[11px] flex items-center justify-between">
             <span className="flex items-center gap-1.5">
-              <Eye className="w-3.5 h-3.5 text-slate-500" />
-              <span>ROLE: COMMUNITY / OBSERVER</span>
+              <Eye className="w-3.5 h-3.5 text-slate-400" />
+              <span className="font-semibold text-slate-300">ROLE: OBSERVER (READ-ONLY)</span>
             </span>
-            <span className="text-[10px] font-mono text-slate-500">GenVM Zero-Trust</span>
+            <span className="text-[10px] font-mono text-amber-400/90 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+              Bilateral Escrow Locked
+            </span>
           </div>
         )}
 
@@ -315,23 +317,35 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({
         {/* Status: IN_REVIEW */}
         {(normStatus === 'IN_REVIEW' || normStatus === '1') && (
           <div className="space-y-2">
-            <button
-              onClick={() => onAdjudicate(campaign.campaign_id)}
-              disabled={isLoading}
-              className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-teal-500 hover:from-indigo-500 hover:to-teal-400 text-white text-xs font-bold shadow-lg shadow-indigo-500/25 transition-all active:scale-[0.99] disabled:opacity-50"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>GenVM Crawling Web Evidence &amp; Auditing...</span>
-                </>
-              ) : (
-                <>
-                  <Scale className="w-3.5 h-3.5" />
-                  <span>Trigger GenVM AI Court Consensus</span>
-                </>
-              )}
-            </button>
+            {(isBrand || isCreator) ? (
+              <button
+                onClick={() => onAdjudicate(campaign.campaign_id)}
+                disabled={isLoading}
+                className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-teal-500 hover:from-indigo-500 hover:to-teal-400 text-white text-xs font-bold shadow-lg shadow-indigo-500/25 transition-all active:scale-[0.99] disabled:opacity-50"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>GenVM Crawling Web Evidence &amp; Auditing...</span>
+                  </>
+                ) : (
+                  <>
+                    <Scale className="w-3.5 h-3.5" />
+                    <span>Trigger GenVM AI Court Consensus</span>
+                  </>
+                )}
+              </button>
+            ) : (
+              <div className="p-3 rounded-2xl bg-slate-950/60 border border-slate-800 text-center text-slate-400 text-xs">
+                <div className="flex items-center justify-center gap-1.5 font-semibold text-slate-300 mb-1">
+                  <Lock className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Observer Mode: Bilateral In-Review</span>
+                </div>
+                <p className="text-[11px] text-slate-500 font-mono leading-relaxed">
+                  Only Brand Sponsor ({truncateAddress(campaign.brand)}) or Assigned Creator ({truncateAddress(campaign.creator)}) can trigger AI Court adjudication.
+                </p>
+              </div>
+            )}
 
             {isCreator ? (
               <button
@@ -347,11 +361,11 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({
                 <Clock className="w-3.5 h-3.5" />
                 <span>Claim Auto-Payout {isTimeoutReached ? '(Ready)' : '(Window Active)'}</span>
               </button>
-            ) : (
+            ) : isBrand ? (
               <div className="p-2 rounded-xl bg-slate-950/60 border border-slate-800 text-slate-400 text-[10px] text-center font-mono">
-                🔒 Auto-Payout upon review window expiry is exclusive to designated Creator
+                🔒 Review countdown active: Creator can auto-claim if unreviewed after timeout
               </div>
-            )}
+            ) : null}
           </div>
         )}
 
@@ -389,23 +403,29 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({
             </button>
 
             {isCoolingFinished ? (
-              <button
-                onClick={() => onFinalizeSettlement && onFinalizeSettlement(campaign.campaign_id)}
-                disabled={isLoading}
-                className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white text-xs font-bold shadow-lg shadow-emerald-500/25 transition-all active:scale-[0.99]"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Disbursing Escrow Funds...</span>
-                  </>
-                ) : (
-                  <>
-                    <ShieldCheck className="w-4 h-4" />
-                    <span>Finalize Settlement &amp; Disburse Payout</span>
-                  </>
-                )}
-              </button>
+              (isBrand || isCreator) ? (
+                <button
+                  onClick={() => onFinalizeSettlement && onFinalizeSettlement(campaign.campaign_id)}
+                  disabled={isLoading}
+                  className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white text-xs font-bold shadow-lg shadow-emerald-500/25 transition-all active:scale-[0.99]"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Disbursing Escrow Funds...</span>
+                    </>
+                  ) : (
+                    <>
+                      <ShieldCheck className="w-4 h-4" />
+                      <span>Finalize Settlement &amp; Disburse Payout</span>
+                    </>
+                  )}
+                </button>
+              ) : (
+                <div className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 text-center text-slate-400 text-[11px] font-mono">
+                  🔒 Settlement disbursement is reserved for Brand Sponsor or Creator.
+                </div>
+              )
             ) : (
               (isBrand || isCreator) ? (
                 <button
@@ -417,8 +437,8 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({
                   <span>File Dispute (Stake {appealBondGen} GEN Bond)</span>
                 </button>
               ) : (
-                <div className="p-1.5 rounded-xl bg-slate-950/40 border border-slate-900 text-slate-500 text-[10px] text-center font-mono">
-                  Dispute window active: Only Brand or Creator can file dispute
+                <div className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 text-slate-400 text-[11px] text-center font-mono">
+                  🔒 Dispute window active: Only Brand Sponsor or Creator can file dispute
                 </div>
               )
             )}
@@ -444,23 +464,35 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({
             <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-300 text-[11px] text-center font-medium">
               In Appeal Court: {formatGen(campaign.appeal_bond)} GEN Dispute Bond Locked.
             </div>
-            <button
-              onClick={() => onAdjudicate(campaign.campaign_id)}
-              disabled={isLoading}
-              className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold transition-all shadow-lg shadow-purple-600/25"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>GenVM Appeal Jury Deliberating...</span>
-                </>
-              ) : (
-                <>
-                  <Scale className="w-3.5 h-3.5" />
-                  <span>Execute GenVM Appeal Consensus</span>
-                </>
-              )}
-            </button>
+            {(isBrand || isCreator) ? (
+              <button
+                onClick={() => onAdjudicate(campaign.campaign_id)}
+                disabled={isLoading}
+                className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold transition-all shadow-lg shadow-purple-600/25"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>GenVM Appeal Jury Deliberating...</span>
+                  </>
+                ) : (
+                  <>
+                    <Scale className="w-3.5 h-3.5" />
+                    <span>Execute GenVM Appeal Consensus</span>
+                  </>
+                )}
+              </button>
+            ) : (
+              <div className="p-3 rounded-2xl bg-slate-950/60 border border-slate-800 text-center text-slate-400 text-xs">
+                <div className="flex items-center justify-center gap-1.5 font-semibold text-purple-300 mb-1">
+                  <Lock className="w-3.5 h-3.5 text-purple-400" />
+                  <span>Observer Mode: Appeal Deliberation</span>
+                </div>
+                <p className="text-[11px] text-slate-500 font-mono">
+                  Dispute consensus execution is restricted to Brand Sponsor or Assigned Creator.
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>

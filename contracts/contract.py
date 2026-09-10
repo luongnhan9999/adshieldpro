@@ -142,12 +142,16 @@ class Contract(gl.Contract):
         if camp.status != "OPEN":
             raise gl.vm.UserError(f"Campaign {campaign_id} is not open for submission.")
 
+        caller = str(gl.message.sender_address).lower()
+        if caller == camp.brand:
+            raise gl.vm.UserError("Brand Sponsor cannot submit deliverables to their own campaign.")
+
         clean_url = deliverable_url.strip()
         if not clean_url.startswith("http"):
             raise gl.vm.UserError("Valid live content URL is required.")
 
         now = self._get_current_timestamp()
-        camp.creator = str(gl.message.sender_address).lower()
+        camp.creator = caller
         camp.deliverable_url = clean_url
         camp.status = "IN_REVIEW"
         camp.submitted_at = now
@@ -162,6 +166,10 @@ class Contract(gl.Contract):
         camp = self.campaigns[campaign_id]
         if camp.status not in ["IN_REVIEW", "DISPUTED"]:
             raise gl.vm.UserError(f"Campaign {campaign_id} is not awaiting review or dispute.")
+
+        caller = str(gl.message.sender_address).lower()
+        if caller != camp.brand and caller != camp.creator:
+            raise gl.vm.UserError("Unauthorized: Only the Brand Sponsor or Assigned Creator can trigger adjudication.")
 
         content_url = camp.deliverable_url
         guidelines_text = camp.guidelines
@@ -300,8 +308,8 @@ Respond ONLY with valid JSON:
             raise gl.vm.UserError("Campaign is not awaiting payout or is currently disputed.")
 
         caller = str(gl.message.sender_address).lower()
-        if caller != camp.brand and caller != camp.creator and caller != self.platform_admin:
-            raise gl.vm.UserError("Unauthorized caller.")
+        if caller != camp.brand and caller != camp.creator:
+            raise gl.vm.UserError("Unauthorized: Only the Brand Sponsor or Assigned Creator can finalize settlement.")
 
         now = self._get_current_timestamp()
         if now < camp.payout_ready_at:

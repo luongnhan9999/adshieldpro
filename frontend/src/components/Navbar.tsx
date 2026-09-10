@@ -15,7 +15,6 @@ import {
 } from 'lucide-react';
 import { truncateAddress } from '../utils/formatters';
 import { STUDIONET_CHAIN_ID, STUDIONET_RPC_URL, STUDIO_ACCOUNTS_URL, ensureStudionetNetwork } from '../config/genlayer';
-import { GenLayerLogo } from './GenLayerLogo';
 
 interface NavbarProps {
   userAddress: string | null;
@@ -112,9 +111,9 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Brand */}
         <div className="flex items-center gap-3.5">
           <div className="relative group">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 via-teal-400 to-purple-500 rounded-2xl blur opacity-50 group-hover:opacity-85 transition duration-500"></div>
-            <div className="relative w-11 h-11 rounded-xl bg-slate-950 border border-slate-700/80 flex items-center justify-center shadow-lg p-1.5 overflow-hidden">
-              <GenLayerLogo className="w-7 h-7 group-hover:scale-110 transition-transform duration-300" />
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 via-teal-400 to-purple-500 rounded-2xl blur opacity-40 group-hover:opacity-75 transition duration-500"></div>
+            <div className="relative w-11 h-11 rounded-xl bg-slate-900 border border-slate-700/80 flex items-center justify-center shadow-lg">
+              <Shield className="w-6 h-6 text-indigo-400 group-hover:scale-110 transition-transform duration-300" />
             </div>
           </div>
           <div>
@@ -122,15 +121,14 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-indigo-200 bg-clip-text text-transparent">
                 AdShield Pro
               </span>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 tracking-wider uppercase">
-                <GenLayerLogo className="w-3 h-3" />
-                <span>GenLayer</span>
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 tracking-wider uppercase">
+                Studionet v1.0
               </span>
             </div>
             <p className="text-[11px] text-slate-400 flex items-center gap-1.5">
               <span>Autonomous Creator Marketing Escrow</span>
               <span className="text-slate-600">•</span>
-              <span className="text-teal-400/90 font-medium">GenVM Subjective Court</span>
+              <span className="text-indigo-400/90 font-medium">GenVM Consensus</span>
             </p>
           </div>
         </div>
@@ -161,7 +159,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 isStudionet ? 'bg-emerald-400 animate-ping' : 'bg-rose-400'
               }`}
             />
-            <GenLayerLogo className="w-3.5 h-3.5" />
+            <Network className="w-3.5 h-3.5 opacity-80" />
             <span>{isStudionet ? 'Studionet (61999)' : 'Switch to Studionet'}</span>
           </div>
 
@@ -173,7 +171,6 @@ export const Navbar: React.FC<NavbarProps> = ({
             className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-xs font-medium transition-all"
             title="Get test GEN from Studio Accounts"
           >
-            <GenLayerLogo className="w-3 h-3" />
             <span>Studio Faucet</span>
             <ExternalLink className="w-3 h-3" />
           </a>
@@ -199,16 +196,15 @@ export const Navbar: React.FC<NavbarProps> = ({
                   e.stopPropagation();
                   setShowAccountMenu(!showAccountMenu);
                 }}
-                className="flex items-center gap-2 p-1.5 pl-3 rounded-2xl bg-slate-900/90 hover:bg-slate-850 border border-slate-700/80 shadow-inner transition-all group"
+                className="flex items-center gap-2 p-1.5 pl-3 rounded-2xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-700/80 shadow-inner transition-all group"
                 title="View account details"
               >
                 <div className="flex flex-col items-end text-right">
                   <span className="text-xs font-semibold text-slate-200 font-mono group-hover:text-white transition-colors">
                     {truncateAddress(userAddress)}
                   </span>
-                  <span className="text-[11px] text-teal-400 font-mono font-bold flex items-center gap-1">
-                    <GenLayerLogo className="w-3 h-3" />
-                    <span>{parseFloat(balance) > 0 ? parseFloat(balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 }) : '0.000'} GEN</span>
+                  <span className="text-[11px] text-teal-400 font-mono font-bold">
+                    {parseFloat(balance) > 0 ? parseFloat(balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 }) : '0.000'} GEN
                   </span>
                 </div>
                 <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-teal-400 p-[1px] shadow-sm">
