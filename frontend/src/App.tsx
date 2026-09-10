@@ -55,7 +55,7 @@ export const App: React.FC = () => {
 
   // Filters & Portal Views
   const [activePortal, setActivePortal] = useState<'ALL' | 'BRAND' | 'CREATOR' | 'COURT'>('ALL');
-  const [selectedStatusTab, setSelectedStatusTab] = useState<'ALL' | 'OPEN' | 'IN_REVIEW' | 'RESOLVED' | 'IN_APPEAL'>('ALL');
+  const [selectedStatusTab, setSelectedStatusTab] = useState<'ALL' | 'OPEN' | 'IN_REVIEW' | 'AWAITING_PAYOUT' | 'RESOLVED' | 'DISPUTED'>('ALL');
   const [selectedPlatform, setSelectedPlatform] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'NEWEST' | 'BOUNTY_HIGH' | 'BOUNTY_LOW'>('NEWEST');
@@ -199,37 +199,48 @@ export const App: React.FC = () => {
         console.warn('Could not fetch stats:', e);
       }
 
-      // 2. Fetch Campaign Count & Campaigns
+      // 2. Fetch Campaigns via Authoritative Global Public View get_all_campaigns
       try {
-        const rawCount = await genlayerClient.readContract({
-          address: contractAddress as any,
-          functionName: 'get_campaign_count',
-          args: [],
-        });
+        let fetchedCampaigns: Campaign[] = [];
+        try {
+          const rawAll = await genlayerClient.readContract({
+            address: contractAddress as any,
+            functionName: 'get_all_campaigns',
+            args: [],
+          });
+          if (rawAll) {
+            fetchedCampaigns = JSON.parse(rawAll as string);
+          }
+        } catch (allErr) {
+          console.warn('get_all_campaigns not available, falling back to index iteration:', allErr);
+          const rawCount = await genlayerClient.readContract({
+            address: contractAddress as any,
+            functionName: 'get_campaign_count',
+            args: [],
+          });
 
-        const count = Number(rawCount || 0);
-        const fetchedCampaigns: Campaign[] = [];
-
-        for (let i = 0; i < count; i++) {
-          try {
-            const cid = await genlayerClient.readContract({
-              address: contractAddress as any,
-              functionName: 'get_campaign_id_by_index',
-              args: [i],
-            });
-
-            if (cid) {
-              const campRaw = await genlayerClient.readContract({
+          const count = Number(rawCount || 0);
+          for (let i = 0; i < count; i++) {
+            try {
+              const cid = await genlayerClient.readContract({
                 address: contractAddress as any,
-                functionName: 'get_campaign',
-                args: [cid as string],
+                functionName: 'get_campaign_id_by_index',
+                args: [i],
               });
-              if (campRaw) {
-                fetchedCampaigns.push(JSON.parse(campRaw as string));
+
+              if (cid) {
+                const campRaw = await genlayerClient.readContract({
+                  address: contractAddress as any,
+                  functionName: 'get_campaign',
+                  args: [cid as string],
+                });
+                if (campRaw) {
+                  fetchedCampaigns.push(JSON.parse(campRaw as string));
+                }
               }
+            } catch (itemErr) {
+              console.warn(`Failed reading campaign index ${i}:`, itemErr);
             }
-          } catch (itemErr) {
-            console.warn(`Failed reading campaign index ${i}:`, itemErr);
           }
         }
 
@@ -373,6 +384,27 @@ export const App: React.FC = () => {
     }
   };
 
+  // Finalize Settlement (after 24h cooling-off window)
+  const handleFinalizeSettlement = async (campaignId: string) => {
+    setActionLoading(campaignId);
+    try {
+      await ensureStudionetNetwork();
+      await (genlayerClient as any).writeContract({
+        address: contractAddress as `0x${string}`,
+        functionName: 'finalize_settlement',
+        args: [campaignId],
+      });
+      fireConfetti();
+      addToast('success', 'Settlement Finalized!', `Escrow released and transferred according to court consensus.`);
+      if (userAddress) fetchBalance(userAddress);
+      await fetchContractData();
+    } catch (e: any) {
+      addToast('error', 'Finalization Failed', e?.message || String(e));
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   // Cancel Campaign
   const handleCancel = async (campaignId: string) => {
     if (!confirm('Are you sure you want to cancel this campaign? The escrow bounty will be refunded to your wallet.')) {
@@ -408,24 +440,28 @@ export const App: React.FC = () => {
     return campaigns
       .filter((c) => {
         // Portal Mode filter
+        const norm = String(c.status).toUpperCase();
         if (activePortal === 'BRAND' && userAddress) {
           if (c.brand.toLowerCase() !== userAddress.toLowerCase()) return false;
         } else if (activePortal === 'CREATOR' && userAddress) {
-          if (c.status !== CampaignStatus.OPEN && c.creator.toLowerCase() !== userAddress.toLowerCase()) return false;
+          if (norm !== 'OPEN' && norm !== '0' && c.creator.toLowerCase() !== userAddress.toLowerCase()) return false;
         } else if (activePortal === 'COURT') {
-          if (c.status !== CampaignStatus.IN_REVIEW && c.status !== CampaignStatus.IN_APPEAL && !c.verdict) return false;
+          if (norm !== 'IN_REVIEW' && norm !== '1' && norm !== 'AWAITING_PAYOUT' && norm !== 'DISPUTED' && norm !== 'IN_APPEAL' && !c.verdict) return false;
         }
 
         // Status filter
-        if (selectedStatusTab === 'OPEN' && c.status !== CampaignStatus.OPEN) return false;
-        if (selectedStatusTab === 'IN_REVIEW' && c.status !== CampaignStatus.IN_REVIEW) return false;
+        if (selectedStatusTab === 'OPEN' && norm !== 'OPEN' && norm !== '0') return false;
+        if (selectedStatusTab === 'IN_REVIEW' && norm !== 'IN_REVIEW' && norm !== '1') return false;
+        if (selectedStatusTab === 'AWAITING_PAYOUT' && norm !== 'AWAITING_PAYOUT') return false;
         if (
           selectedStatusTab === 'RESOLVED' &&
-          c.status !== CampaignStatus.RESOLVED_PAID &&
-          c.status !== CampaignStatus.RESOLVED_REFUNDED
+          norm !== 'RESOLVED_PAID' &&
+          norm !== 'RESOLVED_REFUNDED' &&
+          norm !== '2' &&
+          norm !== '3'
         )
           return false;
-        if (selectedStatusTab === 'IN_APPEAL' && c.status !== CampaignStatus.IN_APPEAL) return false;
+        if (selectedStatusTab === 'DISPUTED' && norm !== 'DISPUTED' && norm !== 'IN_APPEAL' && norm !== '5') return false;
 
         // Platform filter
         if (selectedPlatform !== 'ALL' && c.platform.toUpperCase() !== selectedPlatform) return false;
@@ -709,7 +745,7 @@ export const App: React.FC = () => {
             <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
               {/* Status pills */}
               <div className="flex items-center gap-1.5 p-1 bg-slate-950 border border-slate-800/80 rounded-xl overflow-x-auto text-xs font-medium">
-                {(['ALL', 'OPEN', 'IN_REVIEW', 'RESOLVED', 'IN_APPEAL'] as const).map((tab) => (
+                {(['ALL', 'OPEN', 'IN_REVIEW', 'AWAITING_PAYOUT', 'RESOLVED', 'DISPUTED'] as const).map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setSelectedStatusTab(tab)}
@@ -775,6 +811,7 @@ export const App: React.FC = () => {
                   onAdjudicate={handleAdjudicate}
                   onClaimTimeout={handleClaimTimeout}
                   onFileAppeal={handleFileAppeal}
+                  onFinalizeSettlement={handleFinalizeSettlement}
                   onCancel={handleCancel}
                   onOpenAudit={(c) => setAuditCampaign(c)}
                   onSelectSubmit={(cid) => {

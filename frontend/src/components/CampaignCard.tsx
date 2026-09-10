@@ -17,7 +17,7 @@ import {
   User,
   ShieldAlert
 } from 'lucide-react';
-import { Campaign, CampaignStatus } from '../types';
+import { Campaign } from '../types';
 import { formatGen, truncateAddress, getStatusInfo } from '../utils/formatters';
 
 interface CampaignCardProps {
@@ -26,6 +26,7 @@ interface CampaignCardProps {
   onAdjudicate: (campaignId: string) => Promise<void>;
   onClaimTimeout: (campaignId: string) => Promise<void>;
   onFileAppeal: (campaignId: string, minBondWei: string) => Promise<void>;
+  onFinalizeSettlement?: (campaignId: string) => Promise<void>;
   onCancel: (campaignId: string) => Promise<void>;
   onOpenAudit: (campaign: Campaign) => void;
   onSelectSubmit: (campaignId: string) => void;
@@ -38,6 +39,7 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({
   onAdjudicate,
   onClaimTimeout,
   onFileAppeal,
+  onFinalizeSettlement,
   onCancel,
   onOpenAudit,
   onSelectSubmit,
@@ -45,6 +47,7 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({
 }) => {
   const statusInfo = getStatusInfo(campaign.status);
   const isLoading = actionLoading === campaign.campaign_id;
+  const normStatus = String(campaign.status).toUpperCase();
 
   const isBrand = userAddress && userAddress.toLowerCase() === campaign.brand.toLowerCase();
   const isCreator = userAddress && userAddress.toLowerCase() === campaign.creator.toLowerCase();
@@ -58,7 +61,7 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({
   const [isTimeoutReached, setIsTimeoutReached] = useState(false);
 
   useEffect(() => {
-    if (campaign.status !== CampaignStatus.IN_REVIEW) {
+    if (normStatus !== 'IN_REVIEW' && normStatus !== '1') {
       setTimeLeft(null);
       return;
     }
@@ -91,7 +94,44 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({
     updateTimer();
     const timerId = setInterval(updateTimer, 1000);
     return () => clearInterval(timerId);
-  }, [campaign.status, campaign.submitted_at, campaign.timeout_duration]);
+  }, [normStatus, campaign.submitted_at, campaign.timeout_duration]);
+
+  // Cooling period calculation for AWAITING_PAYOUT
+  const [coolingTimeLeft, setCoolingTimeLeft] = useState<string | null>(null);
+  const [isCoolingFinished, setIsCoolingFinished] = useState(false);
+
+  useEffect(() => {
+    if (normStatus !== 'AWAITING_PAYOUT') {
+      setCoolingTimeLeft(null);
+      return;
+    }
+
+    const readyAtSec = parseInt(campaign.payout_ready_at || '0', 10);
+    if (readyAtSec === 0) {
+      setIsCoolingFinished(true);
+      setCoolingTimeLeft('Cooling period elapsed (Settlement ready)');
+      return;
+    }
+
+    const updateCoolingTimer = () => {
+      const nowSec = Math.floor(Date.now() / 1000);
+      const diffSec = readyAtSec - nowSec;
+      if (diffSec <= 0) {
+        setIsCoolingFinished(true);
+        setCoolingTimeLeft('24h dispute window elapsed (Ready to settle)');
+      } else {
+        setIsCoolingFinished(false);
+        const hours = Math.floor(diffSec / 3600);
+        const minutes = Math.floor((diffSec % 3600) / 60);
+        const seconds = diffSec % 60;
+        setCoolingTimeLeft(`${hours}h ${minutes}m ${seconds}s dispute window remaining`);
+      }
+    };
+
+    updateCoolingTimer();
+    const interval = setInterval(updateCoolingTimer, 1000);
+    return () => clearInterval(interval);
+  }, [normStatus, campaign.payout_ready_at]);
 
   const renderPlatformIcon = (platform: string) => {
     switch (platform.toUpperCase()) {
@@ -99,6 +139,8 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({
         return <Video className="w-3.5 h-3.5 text-red-400" />;
       case 'X_TWITTER':
         return <Twitter className="w-3.5 h-3.5 text-sky-400" />;
+      case 'TIKTOK':
+        return <Sparkles className="w-3.5 h-3.5 text-pink-400" />;
       default:
         return <FileText className="w-3.5 h-3.5 text-teal-400" />;
     }
@@ -120,7 +162,7 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({
           </div>
 
           <div
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-[10px] font-mono font-bold tracking-wider uppercase ${statusInfo.bg} ${statusInfo.text} ${statusInfo.border}`}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-[10px] font-bold border tracking-wider uppercase font-mono ${statusInfo.bg} ${statusInfo.text} ${statusInfo.border}`}
           >
             {statusInfo.pulse && <span className="w-1.5 h-1.5 rounded-full bg-current animate-ping" />}
             <span>{statusInfo.label}</span>
@@ -172,8 +214,8 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({
             </div>
           </div>
 
-          {campaign.status === CampaignStatus.IN_REVIEW && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-500/15 border border-teal-500/30 text-teal-300 text-[10px] font-mono font-bold" title="Brand cannot cancel or withdraw escrow once creator has submitted link">
+          {(normStatus === 'IN_REVIEW' || normStatus === '1' || normStatus === 'AWAITING_PAYOUT') && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-500/15 border border-teal-500/30 text-teal-300 text-[10px] font-mono font-bold" title="Brand cannot cancel or withdraw escrow once deliverable is submitted">
               <Lock className="w-3.5 h-3.5 text-teal-400" />
               <span>Anti-Cancel Active</span>
             </div>
@@ -181,7 +223,7 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({
         </div>
 
         {/* Review Countdown Banner (if IN_REVIEW) */}
-        {campaign.status === CampaignStatus.IN_REVIEW && timeLeft && (
+        {(normStatus === 'IN_REVIEW' || normStatus === '1') && timeLeft && (
           <div className="mb-4 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-between text-xs text-amber-300">
             <span className="flex items-center gap-1.5 text-[11px]">
               <Clock className="w-3.5 h-3.5 animate-spin" />
@@ -203,50 +245,30 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({
 
         {/* Deliverable URL */}
         {campaign.deliverable_url && (
-          <div className="mb-4">
+          <div className="mb-4 p-3 bg-slate-950/80 rounded-2xl border border-slate-850">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-              Deliverable URL
+              Live Deliverable Web Proof
             </span>
             <a
               href={campaign.deliverable_url}
               target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-between p-2.5 rounded-xl bg-teal-500/5 border border-teal-500/20 text-teal-300 hover:bg-teal-500/15 text-xs transition-all group/link"
+              rel="noreferrer"
+              className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1.5 break-all font-mono hover:underline"
             >
-              <span className="font-mono truncate mr-2">{campaign.deliverable_url}</span>
-              <ExternalLink className="w-3.5 h-3.5 shrink-0 group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-transform" />
+              <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">{campaign.deliverable_url}</span>
             </a>
           </div>
         )}
 
-        {/* Compliance & Confidence Meters (if resolved or appealed) */}
-        {(campaign.verdict || campaign.compliance_score > 0) && (
-          <div className="mb-4 p-3 rounded-2xl bg-slate-950/70 border border-slate-800/80 space-y-2">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-[10px] font-bold text-slate-400 uppercase">Compliance Score</span>
-              <span className="font-mono font-bold text-white text-xs">{campaign.compliance_score}%</span>
-            </div>
-            <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-500 ${
-                  campaign.compliance_score >= 70
-                    ? 'bg-gradient-to-r from-teal-500 to-emerald-400'
-                    : 'bg-gradient-to-r from-rose-500 to-amber-400'
-                }`}
-                style={{ width: `${Math.min(100, Math.max(0, campaign.compliance_score))}%` }}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Brand vs Creator metadata */}
-        <div className="grid grid-cols-2 gap-2 text-[11px] font-mono mb-5 pt-3 border-t border-slate-800/80 text-slate-400">
-          <div className="p-2 rounded-xl bg-slate-950/40 border border-slate-900">
-            <span className="text-slate-500 block text-[9px] uppercase font-sans font-bold">Brand Sponsor</span>
+        {/* Brand & Creator Metadata */}
+        <div className="grid grid-cols-2 gap-2 text-[11px] font-mono mb-4">
+          <div className="p-2.5 bg-slate-950/60 rounded-xl border border-slate-850">
+            <span className="text-slate-400 block text-[9px] uppercase font-sans font-bold">Brand Sponsor</span>
             <span className="truncate block text-slate-200 font-semibold">{truncateAddress(campaign.brand)}</span>
           </div>
-          <div className="p-2 rounded-xl bg-slate-950/40 border border-slate-900">
-            <span className="text-slate-500 block text-[9px] uppercase font-sans font-bold">Creator</span>
+          <div className="p-2.5 bg-slate-950/60 rounded-xl border border-slate-850">
+            <span className="text-slate-400 block text-[9px] uppercase font-sans font-bold">Assigned Creator</span>
             <span className="truncate block text-teal-300 font-semibold">{truncateAddress(campaign.creator)}</span>
           </div>
         </div>
@@ -255,7 +277,7 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({
       {/* Action Buttons */}
       <div className="space-y-2 pt-2 border-t border-slate-800/80">
         {/* Status: OPEN */}
-        {campaign.status === CampaignStatus.OPEN && (
+        {(normStatus === 'OPEN' || normStatus === '0') && (
           <div className="flex items-center gap-2">
             {isBrand ? (
               <button
@@ -291,7 +313,7 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({
         )}
 
         {/* Status: IN_REVIEW */}
-        {campaign.status === CampaignStatus.IN_REVIEW && (
+        {(normStatus === 'IN_REVIEW' || normStatus === '1') && (
           <div className="space-y-2">
             <button
               onClick={() => onAdjudicate(campaign.campaign_id)}
@@ -333,8 +355,78 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({
           </div>
         )}
 
+        {/* Status: AWAITING_PAYOUT (24h Insolvent Appeal Cooling-Off Window) */}
+        {normStatus === 'AWAITING_PAYOUT' && (
+          <div className="space-y-2">
+            <div className="p-3 rounded-2xl bg-cyan-950/40 border border-cyan-500/30 text-xs text-cyan-200">
+              <div className="flex items-center justify-between font-bold text-white mb-1">
+                <span className="flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Verdict: {campaign.verdict}</span>
+                </span>
+                <span className="font-mono text-[11px] text-cyan-300">
+                  Score: {campaign.compliance_score}/100
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-300">
+                {isCoolingFinished
+                  ? '24h dispute cooling window has elapsed. Funds are ready for final settlement!'
+                  : 'Cooling-off dispute window active. Escrow is preserved in contract until settlement.'}
+              </p>
+              {coolingTimeLeft && (
+                <div className="mt-1.5 font-mono text-[10px] text-cyan-400 font-bold">
+                  ⏱️ {coolingTimeLeft}
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={() => onOpenAudit(campaign)}
+              className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-700/80 text-white text-xs font-bold transition-all shadow-sm"
+            >
+              <Eye className="w-3.5 h-3.5 text-indigo-400" />
+              <span>View On-Chain Audit Dossier</span>
+            </button>
+
+            {isCoolingFinished ? (
+              <button
+                onClick={() => onFinalizeSettlement && onFinalizeSettlement(campaign.campaign_id)}
+                disabled={isLoading}
+                className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white text-xs font-bold shadow-lg shadow-emerald-500/25 transition-all active:scale-[0.99]"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Disbursing Escrow Funds...</span>
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>Finalize Settlement &amp; Disburse Payout</span>
+                  </>
+                )}
+              </button>
+            ) : (
+              (isBrand || isCreator) ? (
+                <button
+                  onClick={() => onFileAppeal(campaign.campaign_id, appealBondWei)}
+                  disabled={isLoading}
+                  className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-200 text-xs font-bold transition-colors"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-purple-400" />
+                  <span>File Dispute (Stake {appealBondGen} GEN Bond)</span>
+                </button>
+              ) : (
+                <div className="p-1.5 rounded-xl bg-slate-950/40 border border-slate-900 text-slate-500 text-[10px] text-center font-mono">
+                  Dispute window active: Only Brand or Creator can file dispute
+                </div>
+              )
+            )}
+          </div>
+        )}
+
         {/* Status: RESOLVED (PAID or REFUNDED) */}
-        {(campaign.status === CampaignStatus.RESOLVED_PAID || campaign.status === CampaignStatus.RESOLVED_REFUNDED) && (
+        {(normStatus === 'RESOLVED_PAID' || normStatus === '2' || normStatus === 'RESOLVED_REFUNDED' || normStatus === '3') && (
           <div className="space-y-2">
             <button
               onClick={() => onOpenAudit(campaign)}
@@ -343,26 +435,11 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({
               <Eye className="w-3.5 h-3.5 text-indigo-400" />
               <span>View On-Chain Audit Dossier</span>
             </button>
-
-            {isBrand || isCreator ? (
-              <button
-                onClick={() => onFileAppeal(campaign.campaign_id, appealBondWei)}
-                disabled={isLoading}
-                className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-purple-300 text-[11px] font-semibold transition-colors"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>File Dispute Appeal (Stake {appealBondGen} GEN Bond)</span>
-              </button>
-            ) : (
-              <div className="p-1.5 rounded-xl bg-slate-950/40 border border-slate-900 text-slate-500 text-[10px] text-center font-mono">
-                Only Brand Sponsor or Creator can file a dispute appeal
-              </div>
-            )}
           </div>
         )}
 
-        {/* Status: IN_APPEAL */}
-        {campaign.status === CampaignStatus.IN_APPEAL && (
+        {/* Status: DISPUTED or IN_APPEAL */}
+        {(normStatus === 'DISPUTED' || normStatus === 'IN_APPEAL' || normStatus === '5') && (
           <div className="space-y-2">
             <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-300 text-[11px] text-center font-medium">
               In Appeal Court: {formatGen(campaign.appeal_bond)} GEN Dispute Bond Locked.
@@ -390,4 +467,3 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({
     </div>
   );
 };
-
