@@ -134,6 +134,29 @@ export async function readContractStudionet(params: {
   const { address, functionName, args = [], from = '0x0000000000000000000000000000000000000000' } = params;
   const calldataHex = encodeCalldata({ method: functionName, args });
 
+  // 1. Try via window.ethereum if connected on Studionet
+  if (typeof window !== 'undefined' && (window as any).ethereum) {
+    try {
+      const ethRes = await (window as any).ethereum.request({
+        method: 'gen_call',
+        params: [
+          {
+            from,
+            to: address,
+            data: calldataHex,
+            type: 'read',
+          },
+        ],
+      });
+      if (ethRes) {
+        return decodeCalldataString(ethRes);
+      }
+    } catch (e) {
+      // Fallback to direct HTTP RPC fetch
+    }
+  }
+
+  // 2. Direct HTTP RPC fetch
   const response = await fetch(STUDIONET_RPC_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

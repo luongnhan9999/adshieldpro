@@ -45,36 +45,14 @@ export const App: React.FC = () => {
   const [chainId, setChainId] = useState<number | null>(null);
   const [contractAddress, setContractAddress] = useState<string>(getStoredContractAddress());
 
-  const INITIAL_ONCHAIN_CAMPAIGNS: Campaign[] = [
-    {
-      campaign_id: 'ad-1',
-      brand: '0x52c5e913fc54d00cba5df3312268bf66035661f8',
-      creator: '0xe2f55eee0b444f4c5c757303184194ff73e7b628',
-      bounty_amount: '1500000000000000000',
-      appeal_bond: '0',
-      guidelines: 'Include a 60-90s dedicated sponsor segment explaining AdShield Pro. Put official link https://adshield.pro in top 3 lines of video description and include #AdShield #GenLayer. Must include live backlink to https://adshield.pro in the primary deliverable description. Must feature hashtags #AdShield and #GenLayer in the post. Must contain a dedicated sponsor segment lasting at least 60 seconds. Must explain GenVM non-deterministic web scraping and Anti-Cancel escrow protection.',
-      platform: 'YOUTUBE',
-      deliverable_url: 'https://github.com/luongnhan9999/adshieldpro',
-      status: 'AWAITING_PAYOUT',
-      verdict: 'VIOLATED',
-      reason: 'The submitted deliverable URL (https://github.com/luongnhan9999/adshieldpro) resolves to a GitHub repository README page, not a YouTube video as specified by the campaign platform. This is a fundamental platform mismatch — the brand guidelines explicitly require a YOUTUBE deliverable, and a GitHub repository cannot satisfy any YouTube-specific requirements. Evaluating against all stated criteria: (1) There is NO 60-90 second dedicated sponsor segment explaining AdShield Pro. (2) The official link https://adshield.pro does not appear in top 3 lines. (3) Required hashtags #AdShield and #GenLayer missing. Verdict: VIOLATED.',
-      confidence: 97,
-      compliance_score: 8,
-      submitted_at: '1789032741',
-      timeout_duration: '172800',
-      payout_ready_at: '1789119248',
-      disputed_at: '0'
-    }
-  ];
-
   const [stats, setStats] = useState<ProtocolStats>(() => {
     try {
       const cached = localStorage.getItem(`adshield_stats_${contractAddress.toLowerCase()}`);
       if (cached) return JSON.parse(cached);
     } catch (e) {}
     return {
-      total_campaigns: 1,
-      total_escrow_locked: '1500000000000000000',
+      total_campaigns: 0,
+      total_escrow_locked: '0',
       total_campaigns_settled: 0,
     };
   });
@@ -88,7 +66,7 @@ export const App: React.FC = () => {
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
     } catch (e) {}
-    return INITIAL_ONCHAIN_CAMPAIGNS;
+    return [];
   });
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
