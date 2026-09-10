@@ -116,13 +116,14 @@ def test_successful_adjudication_compliant(adshield_contract, brand_account, cre
     assert camp["status"] == "AWAITING_PAYOUT"
     assert camp["verdict"] == "COMPLIANT"
     assert camp["compliance_score"] == 95
+    assert int(camp["payout_ready_at"]) > 0
 
-    # Finalize settlement
-    settle_receipt = adshield_contract.finalize_settlement(["ad-1"]).transact()
-    assert tx_execution_succeeded(settle_receipt)
-
-    camp_settled = json.loads(adshield_contract.get_campaign(["ad-1"]).call())
-    assert camp_settled["status"] == "RESOLVED_PAID"
+    # Premature settlement during 24h cooling-off window must fail
+    try:
+        settle_receipt = adshield_contract.finalize_settlement(["ad-1"]).transact()
+        assert tx_execution_failed(settle_receipt)
+    except Exception as exc:
+        assert "cooling-off" in str(exc).lower() or "revert" in str(exc).lower() or "error" in str(exc).lower()
 
 
 def test_failed_adjudication_violated(adshield_contract, brand_account, creator_account, install_mocks):
@@ -160,13 +161,14 @@ def test_failed_adjudication_violated(adshield_contract, brand_account, creator_
     camp = json.loads(adshield_contract.get_campaign(["ad-1"]).call())
     assert camp["status"] == "AWAITING_PAYOUT"
     assert camp["verdict"] == "VIOLATED"
+    assert int(camp["payout_ready_at"]) > 0
 
-    # Finalize refund
-    settle_receipt = adshield_contract.finalize_settlement(["ad-1"]).transact()
-    assert tx_execution_succeeded(settle_receipt)
-
-    camp_refunded = json.loads(adshield_contract.get_campaign(["ad-1"]).call())
-    assert camp_refunded["status"] == "RESOLVED_REFUNDED"
+    # Finalize refund must also be blocked during 24h cooling-off window to allow creator appeal
+    try:
+        settle_receipt = adshield_contract.finalize_settlement(["ad-1"]).transact()
+        assert tx_execution_failed(settle_receipt)
+    except Exception as exc:
+        assert "cooling-off" in str(exc).lower() or "revert" in str(exc).lower() or "error" in str(exc).lower()
 
 
 def test_claim_timeout_payout(adshield_contract, brand_account, creator_account):
@@ -249,3 +251,40 @@ def test_get_all_campaigns(adshield_contract, brand_account):
     assert campaigns[0]["campaign_id"] == "ad-1"
     assert "payout_ready_at" in campaigns[0]
     assert "disputed_at" in campaigns[0]
+
+
+def test_unconditional_cooling_off_protection(adshield_contract, brand_account, creator_account, install_mocks):
+    """Verify 24h cooling-off is strictly enforced and cannot be bypassed by timeout_duration=0."""
+    bounty = 1_000_000_000_000_000_000
+    deliverable_url = "https://myblog.com/test-zero-timeout"
+
+    adshield_contract.create_campaign(
+        ["Test guidelines with #AdShield", "BLOG", 0]
+    ).transact(value=bounty)
+
+    creator_contract = adshield_contract.connect(creator_account)
+    creator_contract.submit_content(["ad-1", deliverable_url]).transact()
+
+    install_mocks(
+        web_mocks={deliverable_url: "Great product #AdShield"},
+        llm_mocks={
+            "AdShield Marketing Court": json.dumps({
+                "verdict": "COMPLIANT",
+                "confidence": 99,
+                "compliance_score": 90,
+                "reason": "Meets guidelines."
+            })
+        }
+    )
+    adshield_contract.adjudicate(["ad-1"]).transact()
+
+    camp = json.loads(adshield_contract.get_campaign(["ad-1"]).call())
+    assert camp["status"] == "AWAITING_PAYOUT"
+    assert int(camp["payout_ready_at"]) > 0
+
+    # Attempting to finalize immediately must be blocked by 24h cooling-off window
+    try:
+        receipt = adshield_contract.finalize_settlement(["ad-1"]).transact()
+        assert tx_execution_failed(receipt)
+    except Exception as exc:
+        assert "cooling-off" in str(exc).lower() or "revert" in str(exc).lower() or "error" in str(exc).lower()

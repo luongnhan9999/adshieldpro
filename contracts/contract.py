@@ -48,20 +48,30 @@ class Contract(gl.Contract):
         self.campaign_counter = bigint(0)
 
     def _get_current_timestamp(self) -> bigint:
-        """Derive trusted execution timestamp strictly from transaction context (Fail-Closed) with test fallback."""
-        if hasattr(gl, "message_raw") and isinstance(gl.message_raw, dict):
-            dt_raw = gl.message_raw.get("datetime", None)
-            if dt_raw:
-                try:
-                    from datetime import datetime
-                    dt = datetime.fromisoformat(str(dt_raw).replace("Z", "+00:00"))
-                    ts = int(dt.timestamp())
-                    if ts > 0:
-                        return bigint(ts)
-                except Exception:
-                    pass
-        import time
-        return bigint(int(time.time()))
+        """
+        Derive trusted execution timestamp strictly from transaction context.
+        FAIL-CLOSED INVARIANT: Raises UserError immediately if timestamp context 
+        is missing, malformed, or non-positive. Never falls back to non-deterministic time.time().
+        """
+        if not hasattr(gl, "message_raw") or not isinstance(gl.message_raw, dict):
+            raise gl.vm.UserError("Trusted execution timestamp context missing from transaction")
+
+        dt_raw = gl.message_raw.get("datetime", None)
+        if not dt_raw:
+            raise gl.vm.UserError("Trusted timestamp 'datetime' missing from transaction context")
+
+        try:
+            from datetime import datetime
+            dt_str = str(dt_raw)
+            if dt_str.endswith("Z"):
+                dt_str = dt_str[:-1] + "+00:00"
+            dt = datetime.fromisoformat(dt_str)
+            ts = int(dt.timestamp())
+            if ts <= 0:
+                raise gl.vm.UserError("Invalid non-positive execution timestamp resolved")
+            return bigint(ts)
+        except Exception as e:
+            raise gl.vm.UserError(f"Failed to parse runtime ISO timestamp: {str(e)}")
 
     def _parse_llm_json(self, response_str: str) -> dict:
         if isinstance(response_str, dict):
@@ -255,11 +265,10 @@ Respond ONLY with valid JSON:
 
         now = self._get_current_timestamp()
 
-        # ENFORCE 24H DISPUTE COOLING-OFF: Funds remain safely in the contract
+        # ENFORCE 24H DISPUTE COOLING-OFF: Payout is strictly time-locked for 24 hours (86400s)
         if final_verdict in ["COMPLIANT", "VIOLATED"]:
             camp.status = "AWAITING_PAYOUT"
-            cooling = bigint(86400) if camp.timeout_duration > bigint(0) else bigint(0)
-            camp.payout_ready_at = now + cooling  # 24h cooling-off window (or 0 for zero-duration tests)
+            camp.payout_ready_at = now + bigint(86400)
         else:
             camp.status = "DISPUTED"
 
