@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Navbar } from './components/Navbar';
 import { ZeroBalanceBanner } from './components/ZeroBalanceBanner';
 import { StatsBar } from './components/StatsBar';
@@ -6,7 +6,10 @@ import { CreateCampaign } from './components/CreateCampaign';
 import { SubmitContent } from './components/SubmitContent';
 import { CampaignCard } from './components/CampaignCard';
 import { AuditModal } from './components/AuditModal';
+import { ConsensusVisualizer } from './components/ConsensusVisualizer';
+import { ToastContainer, ToastMessage, fireConfetti } from './components/Toast';
 import { Campaign, CampaignStatus, Platform, ProtocolStats } from './types';
+import { DEMO_CAMPAIGNS } from './utils/demoData';
 import {
   ensureStudionetNetwork,
   genlayerClient,
@@ -15,7 +18,25 @@ import {
   STUDIONET_CHAIN_ID,
 } from './config/genlayer';
 import { formatGen, toWei } from './utils/formatters';
-import { Layers, Sparkles, RefreshCw, AlertCircle } from 'lucide-react';
+import {
+  Layers,
+  Sparkles,
+  RefreshCw,
+  AlertCircle,
+  Search,
+  Filter,
+  Shield,
+  Scale,
+  Send,
+  PlusCircle,
+  Video,
+  Twitter,
+  FileText,
+  SlidersHorizontal,
+  Flame,
+  Clock,
+  Cpu
+} from 'lucide-react';
 
 export const App: React.FC = () => {
   const [userAddress, setUserAddress] = useState<string | null>(null);
@@ -32,11 +53,38 @@ export const App: React.FC = () => {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [selectedTab, setSelectedTab] = useState<'ALL' | 'OPEN' | 'IN_REVIEW' | 'RESOLVED' | 'IN_APPEAL'>('ALL');
+
+  // Filters & Portal Views
+  const [activePortal, setActivePortal] = useState<'ALL' | 'BRAND' | 'CREATOR' | 'COURT'>('ALL');
+  const [selectedStatusTab, setSelectedStatusTab] = useState<'ALL' | 'OPEN' | 'IN_REVIEW' | 'RESOLVED' | 'IN_APPEAL'>('ALL');
+  const [selectedPlatform, setSelectedPlatform] = useState<string>('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'NEWEST' | 'BOUNTY_HIGH' | 'BOUNTY_LOW'>('NEWEST');
+
   const [auditCampaign, setAuditCampaign] = useState<Campaign | null>(null);
   const [activeTabForm, setActiveTabForm] = useState<'create' | 'submit'>('create');
   const [targetSubmitId, setTargetSubmitId] = useState<string>('');
   const [globalError, setGlobalError] = useState<string | null>(null);
+
+  // GenVM Consensus Visualizer & Demo Feed
+  const [showVisualizer, setShowVisualizer] = useState(false);
+  const [visualizerCampaignId, setVisualizerCampaignId] = useState('ad-102');
+  const [useDemoFeed, setUseDemoFeed] = useState(true);
+
+  // Toasts
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  const addToast = (type: 'success' | 'error' | 'warning' | 'info', title: string, description?: string) => {
+    const id = Date.now().toString() + Math.random().toString(36).substring(2, 6);
+    setToasts((prev) => [...prev, { id, type, title, description }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 6000);
+  };
+
+  const dismissToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
 
   // Fetch balance for user
   const fetchBalance = useCallback(async (addr: string) => {
@@ -56,7 +104,7 @@ export const App: React.FC = () => {
   // Connect MetaMask
   const handleConnectWallet = async () => {
     if (typeof window === 'undefined' || !(window as any).ethereum) {
-      alert('MetaMask is not installed. Please install MetaMask to use AdShield Pro.');
+      addToast('error', 'MetaMask Required', 'Please install MetaMask to interact with AdShield Pro.');
       return;
     }
 
@@ -70,6 +118,7 @@ export const App: React.FC = () => {
       if (accounts && accounts[0]) {
         setUserAddress(accounts[0]);
         await fetchBalance(accounts[0]);
+        addToast('success', 'Wallet Connected', `Connected as ${accounts[0].slice(0, 6)}...${accounts[0].slice(-4)}`);
       }
 
       const currentChainId = await (window as any).ethereum.request({
@@ -79,6 +128,7 @@ export const App: React.FC = () => {
     } catch (err: any) {
       console.error('Wallet connection error:', err);
       setGlobalError(err?.message || 'Failed to connect wallet.');
+      addToast('error', 'Connection Failed', err?.message || 'User rejected request.');
     }
   };
 
@@ -220,7 +270,6 @@ export const App: React.FC = () => {
     try {
       await ensureStudionetNetwork();
 
-      // Write via genlayer-js / MetaMask provider
       const txHash = await (genlayerClient as any).writeContract({
         address: contractAddress as `0x${string}`,
         functionName: 'create_campaign',
@@ -228,9 +277,12 @@ export const App: React.FC = () => {
         value: valueWei,
       });
 
-      console.log('Campaign created tx:', txHash);
+      addToast('success', 'Escrow Deployed & Locked!', `${bountyGen} GEN deposited. Verified on GenVM.`);
       if (userAddress) fetchBalance(userAddress);
       await fetchContractData();
+    } catch (err: any) {
+      addToast('error', 'Deployment Failed', err?.message || 'Transaction error.');
+      throw err;
     } finally {
       setActionLoading(null);
     }
@@ -250,7 +302,11 @@ export const App: React.FC = () => {
         functionName: 'submit_content',
         args: [campaignId, deliverableUrl],
       });
+      addToast('success', 'Deliverable Submitted!', `Anti-Cancel Lock activated for ${campaignId}. Escrow secured.`);
       await fetchContractData();
+    } catch (err: any) {
+      addToast('error', 'Submission Failed', err?.message || 'Transaction error.');
+      throw err;
     } finally {
       setActionLoading(null);
     }
@@ -261,15 +317,18 @@ export const App: React.FC = () => {
     setActionLoading(campaignId);
     try {
       await ensureStudionetNetwork();
+      addToast('info', 'AI Court Initiated', `GenVM validators rendering web deliverable for ${campaignId}...`);
       await (genlayerClient as any).writeContract({
         address: contractAddress as `0x${string}`,
         functionName: 'adjudicate',
         args: [campaignId],
       });
+      fireConfetti();
+      addToast('success', 'Adjudication Complete', `Consensus verdict rendered for ${campaignId}.`);
       if (userAddress) fetchBalance(userAddress);
       await fetchContractData();
     } catch (e: any) {
-      alert(`Adjudication error: ${e?.message || e}`);
+      addToast('error', 'Adjudication Failed', e?.message || String(e));
     } finally {
       setActionLoading(null);
     }
@@ -285,10 +344,12 @@ export const App: React.FC = () => {
         functionName: 'claim_timeout_payout',
         args: [campaignId],
       });
+      fireConfetti();
+      addToast('success', 'Auto-Payout Claimed!', `Bounty transferred directly to creator wallet.`);
       if (userAddress) fetchBalance(userAddress);
       await fetchContractData();
     } catch (e: any) {
-      alert(`Timeout payout error: ${e?.message || e}`);
+      addToast('error', 'Claim Failed', e?.message || String(e));
     } finally {
       setActionLoading(null);
     }
@@ -305,10 +366,11 @@ export const App: React.FC = () => {
         args: [campaignId],
         value: BigInt(minBondWei),
       });
+      addToast('warning', 'Appeal Staked!', `20% bond locked. Multi-validator consensus re-review initiated.`);
       if (userAddress) fetchBalance(userAddress);
       await fetchContractData();
     } catch (e: any) {
-      alert(`Dispute appeal error: ${e?.message || e}`);
+      addToast('error', 'Appeal Failed', e?.message || String(e));
     } finally {
       setActionLoading(null);
     }
@@ -328,10 +390,11 @@ export const App: React.FC = () => {
         functionName: 'cancel_campaign',
         args: [campaignId],
       });
+      addToast('info', 'Campaign Cancelled', `Escrow bounty refunded to brand.`);
       if (userAddress) fetchBalance(userAddress);
       await fetchContractData();
     } catch (e: any) {
-      alert(`Cancel error: ${e?.message || e}`);
+      addToast('error', 'Cancellation Failed', e?.message || String(e));
     } finally {
       setActionLoading(null);
     }
@@ -340,20 +403,66 @@ export const App: React.FC = () => {
   const handleUpdateContract = (addr: string) => {
     setStoredContractAddress(addr);
     setContractAddress(addr);
+    addToast('info', 'Contract Updated', `Active contract updated to ${addr.slice(0, 6)}...${addr.slice(-4)}`);
   };
 
-  // Filter campaigns
-  const filteredCampaigns = campaigns.filter((c) => {
-    if (selectedTab === 'ALL') return true;
-    if (selectedTab === 'OPEN') return c.status === CampaignStatus.OPEN;
-    if (selectedTab === 'IN_REVIEW') return c.status === CampaignStatus.IN_REVIEW;
-    if (selectedTab === 'RESOLVED') return c.status === CampaignStatus.RESOLVED_PAID || c.status === CampaignStatus.RESOLVED_REFUNDED;
-    if (selectedTab === 'IN_APPEAL') return c.status === CampaignStatus.IN_APPEAL;
-    return true;
-  });
+  // Advanced Multi-Filtering and Sorting
+  const sourceCampaigns = useMemo(() => {
+    if (campaigns.length > 0) return campaigns;
+    return useDemoFeed ? DEMO_CAMPAIGNS : [];
+  }, [campaigns, useDemoFeed]);
+
+  const filteredAndSortedCampaigns = useMemo(() => {
+    return sourceCampaigns
+      .filter((c) => {
+        // Portal Mode filter
+        if (activePortal === 'BRAND' && userAddress) {
+          if (c.brand.toLowerCase() !== userAddress.toLowerCase()) return false;
+        } else if (activePortal === 'CREATOR' && userAddress) {
+          if (c.status !== CampaignStatus.OPEN && c.creator.toLowerCase() !== userAddress.toLowerCase()) return false;
+        } else if (activePortal === 'COURT') {
+          if (c.status !== CampaignStatus.IN_REVIEW && c.status !== CampaignStatus.IN_APPEAL && !c.verdict) return false;
+        }
+
+        // Status filter
+        if (selectedStatusTab === 'OPEN' && c.status !== CampaignStatus.OPEN) return false;
+        if (selectedStatusTab === 'IN_REVIEW' && c.status !== CampaignStatus.IN_REVIEW) return false;
+        if (
+          selectedStatusTab === 'RESOLVED' &&
+          c.status !== CampaignStatus.RESOLVED_PAID &&
+          c.status !== CampaignStatus.RESOLVED_REFUNDED
+        )
+          return false;
+        if (selectedStatusTab === 'IN_APPEAL' && c.status !== CampaignStatus.IN_APPEAL) return false;
+
+        // Platform filter
+        if (selectedPlatform !== 'ALL' && c.platform.toUpperCase() !== selectedPlatform) return false;
+
+        // Search query
+        if (searchQuery.trim()) {
+          const q = searchQuery.toLowerCase();
+          const matchId = c.campaign_id.toLowerCase().includes(q);
+          const matchBrand = c.brand.toLowerCase().includes(q);
+          const matchCreator = c.creator.toLowerCase().includes(q);
+          const matchGuidelines = c.guidelines.toLowerCase().includes(q);
+          if (!matchId && !matchBrand && !matchCreator && !matchGuidelines) return false;
+        }
+
+        return true;
+      })
+      .sort((a, b) => {
+        if (sortBy === 'BOUNTY_HIGH') {
+          return BigInt(b.bounty_amount || '0') > BigInt(a.bounty_amount || '0') ? 1 : -1;
+        }
+        if (sortBy === 'BOUNTY_LOW') {
+          return BigInt(a.bounty_amount || '0') > BigInt(b.bounty_amount || '0') ? 1 : -1;
+        }
+        return 0; // Default is order returned by fetch (newest first)
+      });
+  }, [campaigns, activePortal, selectedStatusTab, selectedPlatform, searchQuery, sortBy, userAddress]);
 
   return (
-    <div className="min-h-screen bg-[#090d16] text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-[#050811] text-slate-100 flex flex-col selection:bg-indigo-500 selection:text-white">
       <Navbar
         userAddress={userAddress}
         balance={balance}
@@ -366,31 +475,70 @@ export const App: React.FC = () => {
       <ZeroBalanceBanner balance={balance} userAddress={userAddress} />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Hero Section */}
-        <div className="mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-800/80 pb-6">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 text-xs font-semibold border border-indigo-500/20">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Subjective Consensus on GenVM</span>
-              </span>
-            </div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
-              Autonomous Creator Marketing Escrow
-            </h1>
-            <p className="text-sm text-slate-400 mt-2 max-w-2xl leading-relaxed">
-              Brands lock marketing escrows; Creators deliver content. Decentralized LLM validators render on-chain consensus audits directly from live web evidence with Anti-Cancel Protection.
-            </p>
-          </div>
+        {/* VIP Hero Section */}
+        <div className="mb-10 relative overflow-hidden rounded-3xl p-8 sm:p-10 border border-slate-800/90 bg-gradient-to-br from-slate-950 via-[#0a0f1e] to-slate-950 shadow-2xl">
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-bl from-indigo-600/15 via-teal-500/10 to-transparent rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-80 h-80 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
 
-          <button
-            onClick={fetchContractData}
-            disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/80 text-xs font-semibold transition-all shrink-0"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            <span>Refresh Protocol Data</span>
-          </button>
+          <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+            <div className="max-w-2xl">
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/15 text-indigo-300 text-xs font-bold border border-indigo-500/30">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>GenLayer Studionet • Chain ID 61999</span>
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-500/15 text-teal-300 text-xs font-bold border border-teal-500/30 font-mono">
+                  <Shield className="w-3.5 h-3.5" />
+                  <span>Anti-Cancel Lock Active</span>
+                </span>
+              </div>
+
+              <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white leading-tight">
+                Autonomous Creator Escrow &amp; <span className="text-gradient-vip">Subjective Court</span>
+              </h1>
+
+              <p className="text-sm sm:text-base text-slate-300 mt-3 leading-relaxed">
+                Decentralized marketing agreements powered by GenVM. Brands lock bounties, creators submit live content, and decentralized LLM validators render consensus audits directly from live web evidence.
+              </p>
+
+              <div className="flex flex-wrap items-center gap-4 mt-6 text-xs text-slate-400">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                  <span>Non-Custodial Escrow</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-indigo-400" />
+                  <span>Zero-Mock On-Chain Consensus</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-amber-400" />
+                  <span>48h Auto-Payout Guarantee</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row lg:flex-col gap-3 shrink-0 w-full lg:w-auto">
+              <button
+                onClick={() => {
+                  setVisualizerCampaignId(campaigns[0]?.campaign_id || 'ad-102');
+                  setShowVisualizer(true);
+                }}
+                className="flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold transition-all shadow-lg shadow-purple-600/25"
+              >
+                <Cpu className="w-4 h-4 text-purple-200 animate-pulse" />
+                <span>Simulate GenVM AI Court</span>
+              </button>
+
+              <button
+                onClick={fetchContractData}
+                disabled={loading}
+                className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-slate-900/90 hover:bg-slate-850 text-slate-200 hover:text-white border border-slate-700/80 text-xs font-bold transition-all shadow-lg hover:shadow-indigo-500/10"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 text-indigo-400 ${loading ? 'animate-spin' : ''}`} />
+                <span>{loading ? 'Syncing Node...' : 'Sync Protocol State'}</span>
+              </button>
+            </div>
+          </div>
         </div>
 
         {globalError && (
@@ -403,28 +551,94 @@ export const App: React.FC = () => {
         {/* Stats Section */}
         <StatsBar stats={stats} loading={loading} />
 
+        {/* Role Portal Switcher */}
+        <div className="mb-6 p-1.5 rounded-2xl bg-slate-950/80 border border-slate-800 flex flex-wrap items-center justify-between gap-2 shadow-lg">
+          <div className="flex items-center gap-1.5 overflow-x-auto p-1">
+            <button
+              onClick={() => setActivePortal('ALL')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                activePortal === 'ALL'
+                  ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-md shadow-indigo-600/30'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>All Protocol Activity</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setActivePortal('BRAND');
+                setActiveTabForm('create');
+              }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                activePortal === 'BRAND'
+                  ? 'bg-gradient-to-r from-indigo-600 to-teal-500 text-white shadow-md shadow-indigo-600/30'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+              }`}
+            >
+              <PlusCircle className="w-3.5 h-3.5" />
+              <span>Brand Sponsor Portal</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setActivePortal('CREATOR');
+                setActiveTabForm('submit');
+              }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                activePortal === 'CREATOR'
+                  ? 'bg-gradient-to-r from-teal-600 to-emerald-500 text-white shadow-md shadow-teal-600/30'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+              }`}
+            >
+              <Send className="w-3.5 h-3.5" />
+              <span>Creator Bounty Hub</span>
+            </button>
+
+            <button
+              onClick={() => setActivePortal('COURT')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                activePortal === 'COURT'
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/30'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+              }`}
+            >
+              <Scale className="w-3.5 h-3.5" />
+              <span>AI Consensus Court</span>
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2 px-3 py-1 text-xs text-slate-400 font-mono">
+            <span>Showing:</span>
+            <span className="font-bold text-white">{filteredAndSortedCampaigns.length} Escrows</span>
+          </div>
+        </div>
+
         {/* Interactive Forms Section */}
         <div className="mb-10">
           <div className="flex items-center gap-2 mb-4">
             <button
               onClick={() => setActiveTabForm('create')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
                 activeTabForm === 'create'
                   ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
-                  : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+                  : 'bg-slate-900/90 text-slate-400 hover:text-white border border-slate-800'
               }`}
             >
-              Brand: Create Escrow Campaign
+              <PlusCircle className="w-3.5 h-3.5" />
+              <span>Brand: Create Escrow Campaign</span>
             </button>
             <button
               onClick={() => setActiveTabForm('submit')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
                 activeTabForm === 'submit'
                   ? 'bg-teal-600 text-white shadow-lg shadow-teal-600/20'
-                  : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+                  : 'bg-slate-900/90 text-slate-400 hover:text-white border border-slate-800'
               }`}
             >
-              Creator: Submit Deliverable URL
+              <Send className="w-3.5 h-3.5" />
+              <span>Creator: Submit Deliverable URL</span>
             </button>
           </div>
 
@@ -448,48 +662,116 @@ export const App: React.FC = () => {
 
         {/* Campaign Explorer Section */}
         <div>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <div className="flex items-center gap-2">
-              <Layers className="w-5 h-5 text-indigo-400" />
-              <h2 className="text-xl font-bold text-white">
-                Escrow Campaigns & Subjective Court
-              </h2>
-              <span className="px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 text-xs font-mono font-bold">
-                {filteredCampaigns.length}
-              </span>
+          {campaigns.length === 0 && (
+            <div className="mb-5 p-3.5 rounded-2xl bg-indigo-500/10 border border-indigo-500/25 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2.5 text-indigo-300">
+                <Sparkles className="w-4 h-4 text-indigo-400 shrink-0" />
+                <span>
+                  <strong>Hackathon Interactive Demo Dataset:</strong> Preloaded with 5 multi-platform escrow cases across all lifecycle stages. Deploy a campaign above to lock real GEN on Studionet.
+                </span>
+              </div>
+              <button
+                onClick={() => setUseDemoFeed(!useDemoFeed)}
+                className="px-3 py-1.5 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/40 text-indigo-200 border border-indigo-500/30 text-[11px] font-mono font-bold shrink-0 transition-colors"
+              >
+                {useDemoFeed ? 'Hide Demo Escrows' : 'Show Demo Escrows'}
+              </button>
+            </div>
+          )}
+
+          {/* Filter Bar: Search, Status, Platform, Sort */}
+          <div className="flex flex-col gap-4 mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+                  <Layers className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
+                    <span>Escrow Registry &amp; Consensus Court</span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-indigo-300 text-xs font-mono font-bold">
+                      {filteredAndSortedCampaigns.length}
+                    </span>
+                  </h2>
+                </div>
+              </div>
+
+              {/* Search input */}
+              <div className="relative w-full sm:w-80">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search ID, guidelines, address..."
+                  className="w-full pl-9 pr-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors shadow-inner"
+                />
+                <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+              </div>
             </div>
 
-            {/* Filter tabs */}
-            <div className="flex items-center gap-1.5 p-1 bg-slate-900 border border-slate-800 rounded-xl overflow-x-auto text-xs font-medium">
-              {(['ALL', 'OPEN', 'IN_REVIEW', 'RESOLVED', 'IN_APPEAL'] as const).map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setSelectedTab(tab)}
-                  className={`px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap ${
-                    selectedTab === tab
-                      ? 'bg-slate-800 text-white font-semibold shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
+            {/* Filter Pills & Sorters */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+              {/* Status pills */}
+              <div className="flex items-center gap-1.5 p-1 bg-slate-950 border border-slate-800/80 rounded-xl overflow-x-auto text-xs font-medium">
+                {(['ALL', 'OPEN', 'IN_REVIEW', 'RESOLVED', 'IN_APPEAL'] as const).map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setSelectedStatusTab(tab)}
+                    className={`px-3 py-1.5 rounded-lg transition-all whitespace-nowrap text-xs ${
+                      selectedStatusTab === tab
+                        ? 'bg-slate-850 text-white font-bold shadow-sm border border-slate-700/60'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    {tab.replace('_', ' ')}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-2">
+                {/* Platform filter */}
+                <select
+                  value={selectedPlatform}
+                  onChange={(e) => setSelectedPlatform(e.target.value)}
+                  className="px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-semibold text-slate-300 focus:outline-none focus:border-indigo-500"
                 >
-                  {tab.replace('_', ' ')}
-                </button>
-              ))}
+                  <option value="ALL">All Platforms</option>
+                  <option value="YOUTUBE">YouTube</option>
+                  <option value="X_TWITTER">X / Twitter</option>
+                  <option value="TIKTOK">TikTok</option>
+                  <option value="BLOG">Blog / Article</option>
+                </select>
+
+                {/* Sort selector */}
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  className="px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-semibold text-slate-300 focus:outline-none focus:border-indigo-500"
+                >
+                  <option value="NEWEST">Newest First</option>
+                  <option value="BOUNTY_HIGH">Bounty: High to Low</option>
+                  <option value="BOUNTY_LOW">Bounty: Low to High</option>
+                </select>
+              </div>
             </div>
           </div>
 
           {/* Cards Grid */}
-          {filteredCampaigns.length === 0 ? (
-            <div className="p-12 text-center bg-[#101626]/50 border border-dashed border-slate-800 rounded-3xl">
-              <p className="text-slate-400 text-sm font-medium">
-                No campaigns found for this view.
+          {filteredAndSortedCampaigns.length === 0 ? (
+            <div className="p-16 text-center glass-panel rounded-3xl border border-dashed border-slate-800">
+              <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto mb-3">
+                <Layers className="w-6 h-6" />
+              </div>
+              <p className="text-slate-300 text-sm font-bold">
+                No matching escrow campaigns found.
               </p>
-              <p className="text-slate-500 text-xs mt-1">
-                Create a marketing campaign or switch filters to see active escrows.
+              <p className="text-slate-500 text-xs mt-1 max-w-sm mx-auto">
+                Deploy an escrow campaign, submit a deliverable, or clear your search filters to explore.
               </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredCampaigns.map((camp) => (
+              {filteredAndSortedCampaigns.map((camp) => (
                 <CampaignCard
                   key={camp.campaign_id}
                   campaign={camp}
@@ -502,7 +784,7 @@ export const App: React.FC = () => {
                   onSelectSubmit={(cid) => {
                     setTargetSubmitId(cid);
                     setActiveTabForm('submit');
-                    window.scrollTo({ top: 400, behavior: 'smooth' });
+                    window.scrollTo({ top: 380, behavior: 'smooth' });
                   }}
                   actionLoading={actionLoading}
                 />
@@ -519,15 +801,29 @@ export const App: React.FC = () => {
         onClose={() => setAuditCampaign(null)}
       />
 
+      {/* GenVM Multi-Validator Consensus Visualizer */}
+      <ConsensusVisualizer
+        isOpen={showVisualizer}
+        onClose={() => setShowVisualizer(false)}
+        campaignId={visualizerCampaignId}
+      />
+
+      {/* Toast Notification Center */}
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+
       {/* Footer */}
-      <footer className="border-t border-slate-800/80 bg-[#080b12] py-8 text-center text-xs text-slate-500">
+      <footer className="border-t border-slate-800/80 bg-[#060912] py-8 text-center text-xs text-slate-500 mt-16">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <span>AdShield Pro — Autonomous Marketing Escrow Protocol</span>
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-slate-300">AdShield Pro</span>
+            <span>— Autonomous Creator Marketing Escrow Protocol</span>
+          </div>
           <span className="font-mono text-[11px] text-slate-400">
-            Powered by GenLayer Studionet (Chain ID: 61999) &amp; GenVM
+            Powered by GenLayer Studionet (Chain ID: 61999) &amp; GenVM Non-Deterministic Web Consensus
           </span>
         </div>
       </footer>
     </div>
   );
 };
+
