@@ -127,6 +127,39 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({
           </div>
         </div>
 
+        {/* User Role & Permission Indicator */}
+        {isBrand && (
+          <div className="mb-4 px-3 py-2 rounded-2xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-[11px] font-bold flex items-center justify-between shadow-sm">
+            <span className="flex items-center gap-1.5">
+              <User className="w-3.5 h-3.5 text-indigo-400" />
+              <span>VAI TRÒ: BRAND SPONSOR</span>
+            </span>
+            <span className="text-[10px] font-mono bg-indigo-500/20 px-2 py-0.5 rounded-md text-indigo-200">
+              Quyền Ký Quỹ &amp; Yêu Cầu Phán Quyết
+            </span>
+          </div>
+        )}
+        {isCreator && (
+          <div className="mb-4 px-3 py-2 rounded-2xl bg-teal-500/15 border border-teal-500/30 text-teal-300 text-[11px] font-bold flex items-center justify-between shadow-sm">
+            <span className="flex items-center gap-1.5">
+              <Send className="w-3.5 h-3.5 text-teal-400" />
+              <span>VAI TRÒ: CREATOR ĐƯỢC BẢO HỘ</span>
+            </span>
+            <span className="text-[10px] font-mono bg-teal-500/20 px-2 py-0.5 rounded-md text-teal-200">
+              Anti-Cancel &amp; Quyền Rút Payout
+            </span>
+          </div>
+        )}
+        {!isBrand && !isCreator && (
+          <div className="mb-4 px-3 py-1.5 rounded-xl bg-slate-950/60 border border-slate-800/80 text-slate-400 text-[11px] flex items-center justify-between">
+            <span className="flex items-center gap-1.5">
+              <Eye className="w-3.5 h-3.5 text-slate-500" />
+              <span>VAI TRÒ: CỘNG ĐỒNG / OBSERVER</span>
+            </span>
+            <span className="text-[10px] font-mono text-slate-500">GenVM Zero-Trust</span>
+          </div>
+        )}
+
         {/* Escrow Bounty Card Section */}
         <div className="mb-4 p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 flex items-center justify-between shadow-inner">
           <div>
@@ -140,9 +173,9 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({
           </div>
 
           {campaign.status === CampaignStatus.IN_REVIEW && (
-            <div className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-300 text-[10px] font-mono">
-              <Lock className="w-3 h-3 text-teal-400" />
-              <span>Anti-Cancel Locked</span>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-500/15 border border-teal-500/30 text-teal-300 text-[10px] font-mono font-bold" title="Brand không thể rút tiền hủy kèo sau khi Creator đã nộp link">
+              <Lock className="w-3.5 h-3.5 text-teal-400" />
+              <span>Khóa Chống Hủy Kèo</span>
             </div>
           )}
         </div>
@@ -224,23 +257,34 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({
         {/* Status: OPEN */}
         {campaign.status === CampaignStatus.OPEN && (
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => onSelectSubmit(campaign.campaign_id)}
-              disabled={isLoading}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-2xl bg-teal-500/15 hover:bg-teal-500/25 border border-teal-500/30 text-teal-300 text-xs font-bold transition-all hover:shadow-lg hover:shadow-teal-500/10"
-            >
-              <Send className="w-3.5 h-3.5" />
-              <span>Submit Deliverable</span>
-            </button>
+            {isBrand ? (
+              <button
+                disabled
+                className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-2xl bg-slate-900/60 border border-slate-800 text-slate-500 text-xs font-semibold cursor-not-allowed"
+                title="Bạn là Brand Sponsor tạo chiến dịch này nên không thể tự nộp bài"
+              >
+                <span>Chờ Creator Nhận Việc</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => onSelectSubmit(campaign.campaign_id)}
+                disabled={isLoading}
+                className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-2xl bg-teal-500/15 hover:bg-teal-500/25 border border-teal-500/30 text-teal-300 text-xs font-bold transition-all hover:shadow-lg hover:shadow-teal-500/10"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>Nộp Link Bài (Kích Hoạt Anti-Cancel)</span>
+              </button>
+            )}
+
             {isBrand && (
               <button
                 onClick={() => onCancel(campaign.campaign_id)}
                 disabled={isLoading}
-                className="inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-2xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 text-xs font-semibold transition-all"
-                title="Cancel & Refund Escrow"
+                className="inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-2xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 text-xs font-semibold transition-all shrink-0"
+                title="Hủy chiến dịch và rút 100% tiền ký quỹ về ví Brand (chỉ được hủy khi chưa có ai nộp bài)"
               >
                 <XCircle className="w-3.5 h-3.5" />
-                <span>Cancel</span>
+                <span>Hủy &amp; Hoàn Tiền</span>
               </button>
             )}
           </div>
@@ -257,28 +301,35 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({
               {isLoading ? (
                 <>
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>GenVM Consensus Adjudicating...</span>
+                  <span>GenVM Đang Bóc Tách Web &amp; Biểu Quyết...</span>
                 </>
               ) : (
                 <>
                   <Scale className="w-3.5 h-3.5" />
-                  <span>Trigger AI Subjective Court</span>
+                  <span>Kích Hoạt Tòa Án AI On-Chain (GenVM)</span>
                 </>
               )}
             </button>
 
-            <button
-              onClick={() => onClaimTimeout(campaign.campaign_id)}
-              disabled={isLoading}
-              className={`w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border text-[11px] font-semibold transition-all ${
-                isTimeoutReached
-                  ? 'bg-amber-500 text-slate-950 font-bold border-amber-400 shadow-lg shadow-amber-500/20 animate-pulse'
-                  : 'bg-amber-500/10 hover:bg-amber-500/20 border-amber-500/30 text-amber-300'
-              }`}
-            >
-              <Clock className="w-3.5 h-3.5" />
-              <span>Claim Auto-Payout {isTimeoutReached ? '(Ready)' : '(If Timeout Expired)'}</span>
-            </button>
+            {isCreator ? (
+              <button
+                onClick={() => onClaimTimeout(campaign.campaign_id)}
+                disabled={isLoading || !isTimeoutReached}
+                className={`w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border text-[11px] font-semibold transition-all ${
+                  isTimeoutReached
+                    ? 'bg-amber-500 text-slate-950 font-bold border-amber-400 shadow-lg shadow-amber-500/20 animate-pulse'
+                    : 'bg-amber-500/10 border-amber-500/30 text-amber-300 opacity-60 cursor-not-allowed'
+                }`}
+                title={isTimeoutReached ? 'Thời hạn review đã hết, Creator được nhận 100% tiền thưởng' : 'Chưa hết thời hạn review'}
+              >
+                <Clock className="w-3.5 h-3.5" />
+                <span>Creator Rút Auto-Payout {isTimeoutReached ? '(Đã Đến Hạn)' : '(Chờ Hết Hạn Review)'}</span>
+              </button>
+            ) : (
+              <div className="p-2 rounded-xl bg-slate-950/60 border border-slate-800 text-slate-400 text-[10px] text-center font-mono">
+                🔒 Quyền rút Auto-Payout khi hết hạn review thuộc về Creator
+              </div>
+            )}
           </div>
         )}
 
@@ -287,20 +338,26 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({
           <div className="space-y-2">
             <button
               onClick={() => onOpenAudit(campaign)}
-              className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-white text-xs font-bold transition-all shadow-sm"
+              className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-2xl bg-slate-900 hover:bg-slate-850 border border-slate-700/80 text-white text-xs font-bold transition-all shadow-sm"
             >
               <Eye className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Inspect AI Consensus Dossier</span>
+              <span>Xem Hồ Sơ Phán Quyết On-Chain</span>
             </button>
 
-            <button
-              onClick={() => onFileAppeal(campaign.campaign_id, appealBondWei)}
-              disabled={isLoading}
-              className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-purple-300 text-[11px] font-semibold transition-colors"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Appeal Dispute (Stake {appealBondGen} GEN Bond)</span>
-            </button>
+            {isBrand || isCreator ? (
+              <button
+                onClick={() => onFileAppeal(campaign.campaign_id, appealBondWei)}
+                disabled={isLoading}
+                className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-purple-300 text-[11px] font-semibold transition-colors"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Khiếu Nại Phán Quyết (Stake {appealBondGen} GEN Bond)</span>
+              </button>
+            ) : (
+              <div className="p-1.5 rounded-xl bg-slate-950/40 border border-slate-900 text-slate-500 text-[10px] text-center font-mono">
+                Chỉ Brand hoặc Creator mới có quyền mở phiên khiếu nại
+              </div>
+            )}
           </div>
         )}
 
@@ -308,7 +365,7 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({
         {campaign.status === CampaignStatus.IN_APPEAL && (
           <div className="space-y-2">
             <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-300 text-[11px] text-center font-medium">
-              Stake Active: {formatGen(campaign.appeal_bond)} GEN Bond Locked.
+              Đang Mở Phúc Thẩm: Đã Khóa {formatGen(campaign.appeal_bond)} GEN Tiền Cọc Tranh Chấp.
             </div>
             <button
               onClick={() => onAdjudicate(campaign.campaign_id)}
@@ -318,12 +375,12 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({
               {isLoading ? (
                 <>
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Re-Adjudicating Appeal...</span>
+                  <span>Hội Đồng Tòa Án Đang Phúc Thẩm...</span>
                 </>
               ) : (
                 <>
                   <Scale className="w-3.5 h-3.5" />
-                  <span>Re-Run Multi-Validator Consensus</span>
+                  <span>Thực Thi Đồng Thuận Phúc Thẩm (GenVM)</span>
                 </>
               )}
             </button>

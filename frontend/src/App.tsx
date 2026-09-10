@@ -6,10 +6,9 @@ import { CreateCampaign } from './components/CreateCampaign';
 import { SubmitContent } from './components/SubmitContent';
 import { CampaignCard } from './components/CampaignCard';
 import { AuditModal } from './components/AuditModal';
-import { ConsensusVisualizer } from './components/ConsensusVisualizer';
+import { BilateralCourtModal } from './components/BilateralCourtModal';
 import { ToastContainer, ToastMessage, fireConfetti } from './components/Toast';
 import { Campaign, CampaignStatus, Platform, ProtocolStats } from './types';
-import { DEMO_CAMPAIGNS } from './utils/demoData';
 import {
   ensureStudionetNetwork,
   genlayerClient,
@@ -66,10 +65,8 @@ export const App: React.FC = () => {
   const [targetSubmitId, setTargetSubmitId] = useState<string>('');
   const [globalError, setGlobalError] = useState<string | null>(null);
 
-  // GenVM Consensus Visualizer & Demo Feed
-  const [showVisualizer, setShowVisualizer] = useState(false);
-  const [visualizerCampaignId, setVisualizerCampaignId] = useState('ad-102');
-  const [useDemoFeed, setUseDemoFeed] = useState(true);
+  // Bilateral Court Charter Modal
+  const [showBilateralCharter, setShowBilateralCharter] = useState(false);
 
   // Toasts
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -406,14 +403,9 @@ export const App: React.FC = () => {
     addToast('info', 'Contract Updated', `Active contract updated to ${addr.slice(0, 6)}...${addr.slice(-4)}`);
   };
 
-  // Advanced Multi-Filtering and Sorting
-  const sourceCampaigns = useMemo(() => {
-    if (campaigns.length > 0) return campaigns;
-    return useDemoFeed ? DEMO_CAMPAIGNS : [];
-  }, [campaigns, useDemoFeed]);
-
+  // Advanced Multi-Filtering and Sorting (100% Real On-Chain)
   const filteredAndSortedCampaigns = useMemo(() => {
-    return sourceCampaigns
+    return campaigns
       .filter((c) => {
         // Portal Mode filter
         if (activePortal === 'BRAND' && userAddress) {
@@ -519,14 +511,11 @@ export const App: React.FC = () => {
 
             <div className="flex flex-col sm:flex-row lg:flex-col gap-3 shrink-0 w-full lg:w-auto">
               <button
-                onClick={() => {
-                  setVisualizerCampaignId(campaigns[0]?.campaign_id || 'ad-102');
-                  setShowVisualizer(true);
-                }}
-                className="flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold transition-all shadow-lg shadow-purple-600/25"
+                onClick={() => setShowBilateralCharter(true)}
+                className="flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 to-teal-500 hover:from-indigo-500 hover:to-teal-400 text-white text-xs font-bold transition-all shadow-lg shadow-indigo-600/25 border border-teal-400/30"
               >
-                <Cpu className="w-4 h-4 text-purple-200 animate-pulse" />
-                <span>Simulate GenVM AI Court</span>
+                <Scale className="w-4 h-4 text-teal-200" />
+                <span>Hiến Chương Phán Xử Song Phương</span>
               </button>
 
               <button
@@ -662,19 +651,26 @@ export const App: React.FC = () => {
 
         {/* Campaign Explorer Section */}
         <div>
-          {campaigns.length === 0 && (
-            <div className="mb-5 p-3.5 rounded-2xl bg-indigo-500/10 border border-indigo-500/25 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
-              <div className="flex items-center gap-2.5 text-indigo-300">
-                <Sparkles className="w-4 h-4 text-indigo-400 shrink-0" />
-                <span>
-                  <strong>Hackathon Interactive Demo Dataset:</strong> Preloaded with 5 multi-platform escrow cases across all lifecycle stages. Deploy a campaign above to lock real GEN on Studionet.
-                </span>
+          {campaigns.length === 0 && !loading && (
+            <div className="mb-5 p-4 rounded-2xl bg-indigo-950/40 border border-indigo-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-3 text-indigo-200">
+                <Shield className="w-5 h-5 text-teal-400 shrink-0" />
+                <div>
+                  <div className="font-bold text-white">Chế độ On-Chain Trực Tiếp (Zero-Mock Production)</div>
+                  <div className="text-slate-300 text-[11px] mt-0.5">
+                    Hợp đồng thông minh hiện chưa có chiến dịch ký quỹ nào hoặc đang đồng bộ từ Studionet RPC. Hãy kết nối ví và khởi tạo chiến dịch để khóa GEN thật trên GenLayer!
+                  </div>
+                </div>
               </div>
               <button
-                onClick={() => setUseDemoFeed(!useDemoFeed)}
-                className="px-3 py-1.5 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/40 text-indigo-200 border border-indigo-500/30 text-[11px] font-mono font-bold shrink-0 transition-colors"
+                onClick={() => {
+                  setActiveTabForm('create');
+                  window.scrollTo({ top: 380, behavior: 'smooth' });
+                }}
+                className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shrink-0 transition-colors shadow-md shadow-indigo-600/30 flex items-center gap-1.5"
               >
-                {useDemoFeed ? 'Hide Demo Escrows' : 'Show Demo Escrows'}
+                <PlusCircle className="w-3.5 h-3.5" />
+                <span>Tạo Ký Quỹ Mới</span>
               </button>
             </div>
           )}
@@ -801,11 +797,10 @@ export const App: React.FC = () => {
         onClose={() => setAuditCampaign(null)}
       />
 
-      {/* GenVM Multi-Validator Consensus Visualizer */}
-      <ConsensusVisualizer
-        isOpen={showVisualizer}
-        onClose={() => setShowVisualizer(false)}
-        campaignId={visualizerCampaignId}
+      {/* GenVM Bilateral Protection Court Modal */}
+      <BilateralCourtModal
+        isOpen={showBilateralCharter}
+        onClose={() => setShowBilateralCharter(false)}
       />
 
       {/* Toast Notification Center */}
