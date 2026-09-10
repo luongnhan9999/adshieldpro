@@ -3,6 +3,7 @@
 
 > **Agent Tank Hackathon** — Track: **Subjective Consensus & Future of Work / Creator Economy**  
 > **Target Network:** GenLayer Studionet (`Chain ID: 61999` / `0xF1EF`, RPC: `https://studio.genlayer.com/api`)  
+> **Deployed Contract Address:** `0x0EA45978D1960B5286b63aeb574Fb0dfA37833bF`  
 > **Live Web3 dApp:** [https://adshieldpro-app.vercel.app](https://adshieldpro-app.vercel.app) (Mirror: [https://adshieldpro-genlayer.vercel.app](https://adshieldpro-genlayer.vercel.app))  
 > **GitHub Repository:** [https://github.com/luongnhan9999/adshieldpro](https://github.com/luongnhan9999/adshieldpro)
 
@@ -155,12 +156,10 @@ npm run build
 
 ---
 
-## 🚀 Deploying to GenLayer Studionet
+## 🚀 Deployed Smart Contract on GenLayer Studionet
+- **Contract Address:** `0x0EA45978D1960B5286b63aeb574Fb0dfA37833bF`
+- **Network:** GenLayer Studionet (`61999` / `0xF1EF`)
+- **RPC URL:** `https://studio.genlayer.com/api`
+- **GenLayer Studio:** [https://studio.genlayer.com](https://studio.genlayer.com)
 
-1. Open [GenLayer Studio](https://studio.genlayer.com).
-2. Connect your MetaMask wallet and switch to **GenLayer Studionet** (`Chain ID: 61999`).
-3. Under the **Accounts** panel, ensure your wallet has test GEN tokens.
-4. Navigate to the **Contracts** panel and create a new contract.
-5. Paste the code from `contracts/contract.py`.
-6. Click **Deploy**.
-7. Copy the deployed contract address and paste it into the **Settings** modal in the AdShield Pro frontend.
+The contract is preconfigured as the default address in the frontend dApp. Users can also enter custom contract addresses via the in-app **Settings** modal.
