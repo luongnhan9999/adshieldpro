@@ -134,7 +134,7 @@ export const App: React.FC = () => {
         const currentChainId = await (window as any).ethereum.request({ method: 'eth_chainId' });
         setChainId(parseInt(currentChainId, 16));
         if (userAddress) await fetchBalance(userAddress);
-        addToast('success', 'Network Synchronized', 'Connected to GenLayer Studionet (Chain ID 61999)');
+        addToast('success', 'Network Synchronized', 'Connected to GenLayer Studio Next (Chain ID 61997)');
       }
     } catch (err: any) {
       console.error('Network switch failed:', err);
@@ -731,7 +731,7 @@ export const App: React.FC = () => {
               <div className="flex flex-wrap items-center gap-2 mb-3">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/15 text-indigo-300 text-xs font-bold border border-indigo-500/30">
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>GenLayer Studionet • Chain ID 61999</span>
+                  <span>GenLayer Studio Next • Chain ID 61997</span>
                 </span>
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-500/15 text-teal-300 text-xs font-bold border border-teal-500/30 font-mono">
                   <Shield className="w-3.5 h-3.5" />
@@ -1081,7 +1081,7 @@ export const App: React.FC = () => {
             <span>— Autonomous Creator Marketing Escrow Protocol</span>
           </div>
           <span className="font-mono text-[11px] text-slate-400">
-            Powered by GenLayer Studionet (Chain ID: 61999) &amp; GenVM Non-Deterministic Web Consensus
+            Powered by GenLayer Studio Next (Chain ID: 61997) &amp; GenVM Non-Deterministic Web Consensus
           </span>
         </div>
       </footer>

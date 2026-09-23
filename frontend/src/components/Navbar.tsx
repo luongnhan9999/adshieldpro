@@ -140,7 +140,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <Activity className="w-3.5 h-3.5 text-teal-400 animate-pulse" />
             <span className="text-slate-400">RPC:</span>
             <span className={rpcPing ? 'text-teal-300 font-semibold' : 'text-slate-500'}>
-              {rpcPing ? `${rpcPing}ms` : '61999'}
+              {rpcPing ? `${rpcPing}ms` : '61997'}
             </span>
           </div>
 
@@ -152,7 +152,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/15'
                 : 'bg-rose-500/15 border-rose-500/40 text-rose-300 hover:bg-rose-500/25 animate-pulse'
             }`}
-            title={isStudionet ? 'Connected to GenLayer Studionet (61999)' : 'Click to switch MetaMask to Studionet'}
+            title={isStudionet ? 'Connected to GenLayer Studio Next (61997)' : 'Click to switch MetaMask to Studio Next'}
           >
             <span
               className={`w-2 h-2 rounded-full ${
@@ -160,7 +160,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               }`}
             />
             <Network className="w-3.5 h-3.5 opacity-80" />
-            <span>{isStudionet ? 'Studionet (61999)' : 'Switch to Studionet'}</span>
+            <span>{isStudionet ? 'Studio Next (61997)' : 'Switch to Studio Next'}</span>
           </div>
 
           {/* Faucet Link */}
@@ -236,7 +236,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       <span className="text-xs font-bold text-slate-200 uppercase tracking-wider">Connected Wallet</span>
                     </div>
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                      Studionet 61999
+                      Studio Next 61997
                     </span>
                   </div>
 

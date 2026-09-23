@@ -64,7 +64,7 @@ export const AuditModal: React.FC<AuditModalProps> = ({ campaign, isOpen, onClos
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
-                On-Chain Subjective Verification rendered on GenVM (Studionet 61999)
+                On-Chain Subjective Verification rendered on GenVM (Studio Next 61997)
               </p>
             </div>
           </div>
@@ -236,7 +236,7 @@ export const AuditModal: React.FC<AuditModalProps> = ({ campaign, isOpen, onClos
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800">
                   <span className="text-[10px] text-slate-400 uppercase font-bold block">Network</span>
-                  <span className="font-mono text-white mt-1 block">GenLayer Studionet (61999)</span>
+                  <span className="font-mono text-white mt-1 block">GenLayer Studio Next (61997)</span>
                 </div>
                 <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800">
                   <span className="text-[10px] text-slate-400 uppercase font-bold block">Consensus Algorithm</span>

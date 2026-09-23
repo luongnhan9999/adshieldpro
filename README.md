@@ -2,10 +2,10 @@
 ### Autonomous Creator Marketing Escrow & Mutual-Protection Court on GenLayer
 
 > **Agent Tank Hackathon** — Track: **Subjective Consensus & Future of Work / Creator Economy**  
-> **Target Network:** GenLayer Studionet (`Chain ID: 61999` / `0xF1EF`, RPC: `https://studio.genlayer.com/api`)  
-> **Deployed Contract Address:** `0x916E0030A988f99680b314AA17eCD9Ce70907D03`  
-> **Live Web3 dApp:** [https://adshieldpro-app.vercel.app](https://adshieldpro-app.vercel.app) (Mirror: [https://adshieldpro-genlayer.vercel.app](https://adshieldpro-genlayer.vercel.app))  
-> **GitHub Repository:** [https://github.com/luongnhan9999/adshieldpro](https://github.com/luongnhan9999/adshieldpro)
+> **Target Network:** GenLayer Studio Next (`Chain ID: 61997` / `0xF22D`, RPC: `https://studio-next.genlayer.com/api`)  
+> **Live Web3 dApp:** [https://adshieldpro-next.vercel.app](https://adshieldpro-next.vercel.app)  
+> **GitHub Repository:** [https://github.com/luongnhan9999/adshieldpro](https://github.com/luongnhan9999/adshieldpro)  
+> **Demo Walkthrough Video:** [Watch AdShield Pro Demo](https://youtu.be/adshieldpro-demo) *(Update with your video link)*
 
 ---
 
@@ -15,7 +15,7 @@ Influencer and creator marketing is currently plagued by mutual distrust:
 1. **Brands fear paying upfront:** Creators might never publish the post, fail to follow guidelines, or delete the sponsored content immediately after getting paid.
 2. **Creators fear arbitrary rejections:** Brands frequently claim subjective dissatisfaction after the creator spends hours shooting content, refusing payout or ghosting the creator.
 
-**AdShield Pro** eliminates this dilemma by deploying an **Autonomous Marketing Escrow & Subjective Consensus Court** powered by **GenLayer Studionet** and **GenVM**:
+**AdShield Pro** eliminates this dilemma by deploying an **Autonomous Marketing Escrow & Subjective Consensus Court** powered by **GenLayer Studio Next** and **GenVM**:
 - **Smart Escrow:** Brands lock native `GEN` tokens on-chain with customized guidelines and timeout windows.
 - **Anti-Cancel Protection:** Once a creator submits a live deliverable link, the contract irrevocably locks the funds into review—brands **cannot** cancel or pull funds.
 - **Live On-Chain Web Extraction:** The contract autonomously crawls the live deliverable directly on-chain using `gl.nondet.web.render`.
@@ -68,19 +68,19 @@ Influencer and creator marketing is currently plagued by mutual distrust:
 
 ---
 
-## 🔒 Network Lock: GenLayer Studionet Only
+## 🔒 Network Lock: GenLayer Studio Next (Chain ID 61997)
 
-AdShield Pro is strictly locked to **GenLayer Studionet**:
+AdShield Pro is strictly locked to **GenLayer Studio Next**:
 
 | Parameter | Specification |
 | :--- | :--- |
-| **Network Name** | GenLayer Studionet |
-| **Chain ID** | `61999` (`0xF1EF`) |
-| **JSON-RPC Endpoint** | `https://studio.genlayer.com/api` |
+| **Network Name** | GenLayer Studio Next |
+| **Chain ID** | `61997` (`0xF22D`) |
+| **JSON-RPC Endpoint** | `https://studio-next.genlayer.com/api` |
 | **Native Currency** | `GEN` (18 Decimals) |
-| **Block Explorer & Studio** | [https://studio.genlayer.com](https://studio.genlayer.com) |
+| **Block Explorer & Studio** | [https://studio-next.genlayer.com](https://studio-next.genlayer.com) |
 
-> ⚠️ **MetaMask Integration:** The AdShield Pro frontend enforces automatic network switching to Chain ID `61999`. If a connected account has 0 GEN, a dedicated notification banner links users directly to the GenLayer Studio Accounts panel to claim test tokens.
+> ⚠️ **MetaMask Integration:** The AdShield Pro frontend enforces automatic network switching to Chain ID `61997`. If a connected account has 0 GEN, a dedicated notification banner links users directly to the GenLayer Studio Next Accounts panel to claim test tokens.
 
 ---
 

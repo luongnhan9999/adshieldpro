@@ -18,7 +18,7 @@ export const ZeroBalanceBanner: React.FC<ZeroBalanceBannerProps> = ({ balance, u
         <div className="flex items-center gap-2.5">
           <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 animate-pulse" />
           <span>
-            <strong className="font-semibold text-amber-300">0 GEN Balance Detected!</strong> You need test GEN tokens to create escrow campaigns or stake dispute bonds on Studionet.
+            <strong className="font-semibold text-amber-300">0 GEN Balance Detected!</strong> You need test GEN tokens to create escrow campaigns or stake dispute bonds on Studio Next (Chain 61997).
           </span>
         </div>
         <a
@@ -27,7 +27,7 @@ export const ZeroBalanceBanner: React.FC<ZeroBalanceBannerProps> = ({ balance, u
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-medium text-xs rounded-lg border border-amber-500/40 transition-colors shrink-0"
         >
-          <span>Claim Test GEN in GenLayer Studio Accounts</span>
+          <span>Claim Test GEN on Studio Next</span>
           <ExternalLink className="w-3.5 h-3.5" />
         </a>
       </div>

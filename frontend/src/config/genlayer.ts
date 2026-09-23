@@ -2,32 +2,32 @@ import { createClient, chains } from 'genlayer-js';
 import { toRlp } from 'viem';
 import { encodeCalldata, encodeAddTransaction, decodeCalldataString } from '../utils/calldata';
 
-export const STUDIONET_CHAIN_ID = 61999;
-export const STUDIONET_CHAIN_ID_HEX = '0xF22F';
-export const STUDIONET_RPC_URL = 'https://studio.genlayer.com/api';
-export const STUDIO_ACCOUNTS_URL = 'https://studio.genlayer.com';
+export const STUDIONET_CHAIN_ID = 61997;
+export const STUDIONET_CHAIN_ID_HEX = '0xF22D';
+export const STUDIONET_RPC_URL = 'https://studio-next.genlayer.com/api';
+export const STUDIO_ACCOUNTS_URL = 'https://studio-next.genlayer.com';
 
 export const STUDIONET_CHAIN_CONFIG = {
   chainId: STUDIONET_CHAIN_ID_HEX,
-  chainName: 'GenLayer Studionet',
+  chainName: 'GenLayer Studio Next',
   nativeCurrency: {
     name: 'GEN',
     symbol: 'GEN',
     decimals: 18,
   },
   rpcUrls: [STUDIONET_RPC_URL],
-  blockExplorerUrls: ['https://studio.genlayer.com'],
+  blockExplorerUrls: ['https://studio-next.genlayer.com'],
 };
 
 export const studionet = {
   ...chains.simulator,
   id: STUDIONET_CHAIN_ID,
-  name: 'GenLayer Studionet',
+  name: 'GenLayer Studio Next',
   rpcUrls: {
     default: { http: [STUDIONET_RPC_URL] },
   },
   blockExplorers: {
-    default: { name: 'GenLayer Studio', url: 'https://studio.genlayer.com' },
+    default: { name: 'GenLayer Studio Next', url: 'https://studio-next.genlayer.com' },
   },
 };
 
@@ -60,7 +60,7 @@ export function setStoredContractAddress(address: string): void {
 }
 
 /**
- * Switch or add GenLayer Studionet (Chain ID 61999 / 0xF22F) in MetaMask.
+ * Switch or add GenLayer Studio Next (Chain ID 61997 / 0xF22D) in MetaMask.
  */
 export async function ensureStudionetNetwork(): Promise<boolean> {
   if (typeof window === 'undefined' || !(window as any).ethereum) {

@@ -64,7 +64,7 @@ export const BilateralCourtModal: React.FC<BilateralCourtModalProps> = ({ isOpen
               <span>Decentralized Arbitration Principles on GenLayer</span>
             </h4>
             <p className="text-slate-300 text-xs">
-              Every marketing escrow agreement is executed deterministically and autonomously via <strong>GenVM</strong> intelligent contracts on Studionet (Chain ID: 61999). 
+              Every marketing escrow agreement is executed deterministically and autonomously via <strong>GenVM</strong> intelligent contracts on Studio Next (Chain ID: 61997). 
               No central party, protocol admin, or malicious actor has the unilateral power to override consensus, alter guidelines, or confiscate escrowed funds.
             </p>
           </div>
