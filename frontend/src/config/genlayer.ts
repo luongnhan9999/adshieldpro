@@ -37,7 +37,7 @@ export const genlayerClient = createClient({
   endpoint: STUDIONET_RPC_URL,
 });
 
-export const DEFAULT_CONTRACT_ADDRESS = '0x916E0030A988f99680b314AA17eCD9Ce70907D03';
+export const DEFAULT_CONTRACT_ADDRESS = '0x3a2773D0a15F727cB17563c9d60abC1Aea20fDAB';
 
 export function getStoredContractAddress(): string {
   if (typeof window === 'undefined') return DEFAULT_CONTRACT_ADDRESS;
@@ -45,7 +45,8 @@ export function getStoredContractAddress(): string {
   if (
     !stored ||
     stored === '0x0000000000000000000000000000000000000000' ||
-    stored.toLowerCase() === '0x0ea45978d1960b5286b63aeb574fb0dfa37833bf'
+    stored.toLowerCase() === '0x0ea45978d1960b5286b63aeb574fb0dfa37833bf' ||
+    stored.toLowerCase() === '0x916e0030a988f99680b314aa17ecd9ce70907d03'
   ) {
     localStorage.setItem('adshield_contract_address', DEFAULT_CONTRACT_ADDRESS);
     return DEFAULT_CONTRACT_ADDRESS;

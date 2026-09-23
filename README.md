@@ -3,6 +3,7 @@
 
 > **Agent Tank Hackathon** — Track: **Subjective Consensus & Future of Work / Creator Economy**  
 > **Target Network:** GenLayer Studio Next (`Chain ID: 61997` / `0xF22D`, RPC: `https://studio-next.genlayer.com/api`)  
+> **Deployed Contract Address:** `0x3a2773D0a15F727cB17563c9d60abC1Aea20fDAB`  
 > **Live Web3 dApp:** [https://adshieldpro-next.vercel.app](https://adshieldpro-next.vercel.app)  
 > **GitHub Repository:** [https://github.com/luongnhan9999/adshieldpro](https://github.com/luongnhan9999/adshieldpro)  
 > **Demo Walkthrough Video:** [Watch AdShield Pro Demo](https://youtu.be/adshieldpro-demo) *(Update with your video link)*
