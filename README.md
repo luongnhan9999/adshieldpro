@@ -2,8 +2,8 @@
 ### Autonomous Creator Marketing Escrow & Mutual-Protection Court on GenLayer
 
 > **Agent Tank Hackathon** — Track: **Subjective Consensus & Future of Work / Creator Economy**  
-> **Target Network:** GenLayer Studio Next (`Chain ID: 61997` / `0xF22D`, RPC: `https://studio-next.genlayer.com/api`)  
-> **Deployed Contract Address:** `0x3a2773D0a15F727cB17563c9d60abC1Aea20fDAB`  
+> **Target Network:** GenLayer Studionet (`Chain ID: 61999` / `0xF22F`, RPC: `https://studio.genlayer.com/api`)  
+> **Deployed Contract Address:** `0x916E0030A988f99680b314AA17eCD9Ce70907D03`  
 > **Live Web3 dApp:** [https://adshieldpro-next.vercel.app](https://adshieldpro-next.vercel.app)  
 > **GitHub Repository:** [https://github.com/luongnhan9999/adshieldpro](https://github.com/luongnhan9999/adshieldpro)  
 > **Demo Walkthrough Video:** [Watch AdShield Pro Demo](https://youtu.be/adshieldpro-demo) *(Update with your video link)*
@@ -159,7 +159,7 @@ npm run build
 
 ## 🚀 Deployed Smart Contract on GenLayer Studionet
 - **Contract Address:** `0x916E0030A988f99680b314AA17eCD9Ce70907D03`
-- **Network:** GenLayer Studionet (`61999` / `0xF1EF`)
+- **Network:** GenLayer Studionet (`61999` / `0xF22F`)
 - **RPC URL:** `https://studio.genlayer.com/api`
 - **GenLayer Studio:** [https://studio.genlayer.com](https://studio.genlayer.com)
 

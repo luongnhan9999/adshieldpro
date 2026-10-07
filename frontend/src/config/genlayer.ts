@@ -2,32 +2,32 @@ import { createClient, chains } from 'genlayer-js';
 import { toRlp } from 'viem';
 import { encodeCalldata, encodeAddTransaction, decodeCalldataString } from '../utils/calldata';
 
-export const STUDIONET_CHAIN_ID = 61997;
-export const STUDIONET_CHAIN_ID_HEX = '0xF22D';
-export const STUDIONET_RPC_URL = 'https://studio-next.genlayer.com/api';
-export const STUDIO_ACCOUNTS_URL = 'https://studio-next.genlayer.com';
+export const STUDIONET_CHAIN_ID = 61999;
+export const STUDIONET_CHAIN_ID_HEX = '0xF22F';
+export const STUDIONET_RPC_URL = 'https://studio.genlayer.com/api';
+export const STUDIO_ACCOUNTS_URL = 'https://studio.genlayer.com';
 
 export const STUDIONET_CHAIN_CONFIG = {
   chainId: STUDIONET_CHAIN_ID_HEX,
-  chainName: 'GenLayer Studio Next',
+  chainName: 'GenLayer Studionet',
   nativeCurrency: {
     name: 'GEN',
     symbol: 'GEN',
     decimals: 18,
   },
   rpcUrls: [STUDIONET_RPC_URL],
-  blockExplorerUrls: ['https://studio-next.genlayer.com'],
+  blockExplorerUrls: ['https://studio.genlayer.com'],
 };
 
 export const studionet = {
   ...chains.simulator,
   id: STUDIONET_CHAIN_ID,
-  name: 'GenLayer Studio Next',
+  name: 'GenLayer Studionet',
   rpcUrls: {
     default: { http: [STUDIONET_RPC_URL] },
   },
   blockExplorers: {
-    default: { name: 'GenLayer Studio Next', url: 'https://studio-next.genlayer.com' },
+    default: { name: 'GenLayer Studio', url: 'https://studio.genlayer.com' },
   },
 };
 
@@ -37,7 +37,7 @@ export const genlayerClient = createClient({
   endpoint: STUDIONET_RPC_URL,
 });
 
-export const DEFAULT_CONTRACT_ADDRESS = '0x3a2773D0a15F727cB17563c9d60abC1Aea20fDAB';
+export const DEFAULT_CONTRACT_ADDRESS = '0x916E0030A988f99680b314AA17eCD9Ce70907D03';
 
 export function getStoredContractAddress(): string {
   if (typeof window === 'undefined') return DEFAULT_CONTRACT_ADDRESS;
@@ -46,7 +46,7 @@ export function getStoredContractAddress(): string {
     !stored ||
     stored === '0x0000000000000000000000000000000000000000' ||
     stored.toLowerCase() === '0x0ea45978d1960b5286b63aeb574fb0dfa37833bf' ||
-    stored.toLowerCase() === '0x916e0030a988f99680b314aa17ecd9ce70907d03'
+    stored.toLowerCase() === '0x3a2773d0a15f727cb17563c9d60abc1aea20fdab'
   ) {
     localStorage.setItem('adshield_contract_address', DEFAULT_CONTRACT_ADDRESS);
     return DEFAULT_CONTRACT_ADDRESS;
@@ -61,7 +61,7 @@ export function setStoredContractAddress(address: string): void {
 }
 
 /**
- * Switch or add GenLayer Studio Next (Chain ID 61997 / 0xF22D) in MetaMask.
+ * Switch or add GenLayer Studionet (Chain ID 61999 / 0xF22F) in MetaMask.
  */
 export async function ensureStudionetNetwork(): Promise<boolean> {
   if (typeof window === 'undefined' || !(window as any).ethereum) {
